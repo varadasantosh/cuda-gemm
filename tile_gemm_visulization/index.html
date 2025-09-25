@@ -1,1 +1,645 @@
-g
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CUDA Tile Matrix Multiplication Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .input-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .input-group {
+            display: inline-flex;
+            gap: 10px;
+            align-items: center;
+            margin: 10px;
+        }
+        
+        .input-group label {
+            font-weight: bold;
+            color: #333;
+            min-width: 80px;
+        }
+        
+        .input-group input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            width: 80px;
+            text-align: center;
+            font-size: 16px;
+        }
+        
+        .input-group input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .phase-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .phase-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+        
+        .phase-circle.completed {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .phase-circle.active {
+            background: #667eea;
+            color: white;
+            transform: scale(1.2);
+            border-color: #4c51bf;
+        }
+        
+        .phase-circle.pending {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        
+        .matrices-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .matrix-section {
+            text-align: center;
+        }
+        
+        .matrix-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+            background: #ececec;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 0 auto;
+            max-width: 300px;
+        }
+        
+        .tile {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .tile.active-a {
+            background: #3182ce;
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(49, 130, 206, 0.4);
+        }
+        
+        .tile.active-b {
+            background: #38a169;
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(56, 161, 105, 0.4);
+        }
+        
+        .tile.required-a {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+        
+        .tile.required-b {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .tile.selected {
+            background: #9f7aea;
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(159, 122, 234, 0.4);
+        }
+        
+        .info-panel {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 4px solid #38a169;
+        }
+        
+        .info-panel h3 {
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .phase-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+            
+        }
+
+            
+        info-content {
+            display: flex;
+             gap: 20px;
+        }
+
+        
+        .phase-detail {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #38a169;
+            
+        }
+        
+        .computation-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .flow-item {
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            color: white;
+            min-width: 100px;
+            text-align: center;
+        }
+        
+        .flow-item.matrix-a { background: #3182ce; }
+        .flow-item.matrix-b { background: #38a169; }
+        .flow-item.result { background: #9f7aea; }
+        .flow-operator { font-size: 24px; font-weight: bold; color: #4a5568; }
+        
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #e53e3e;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .input-group {
+                display: block;
+                margin: 15px 0;
+            }
+            
+            .phase-circle {
+                width: 40px;
+                height: 40px;
+                font-size: 14px;
+            }
+            
+            .tile {
+                width: 25px;
+                height: 25px;
+                font-size: 9px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1> CUDA Tile Matrix Multiplication</h1>
+        </div>
+        
+        <div class="input-section">
+            <h3>Select Output Tile to Visualize</h3>
+            <div class="input-group">
+                <label for="tileRow">Tile Row:</label>
+                <input type="number" id="tileRow" min="0" max="7" value="0">
+            </div>
+            <div class="input-group">
+                <label for="tileCol">Tile Col:</label>
+                <input type="number" id="tileCol" min="0" max="7" value="0">
+            </div>
+            <button class="btn" onclick="updateVisualization()">Visualize Tile</button>
+            <div id="error-message"></div>
+        </div>
+        
+        
+        
+        <div class="phase-indicator" id="phaseIndicator"></div>
+
+             <div class="info-panel">
+            <h3> Kernel & Tile Configuration</h3>
+            <div class="phase-info">
+                <div class="phase-detail">
+                    <h4> CUDA Configuration</h4>
+                    <p><strong>Grid Size:</strong> 8×8 thread blocks</p>
+                    <p><strong>Block Dimensions:</strong> 32×32 threads</p>
+                    <p><strong>Tile Size:</strong> 32×32 elements each</p>
+                    <p><strong>Total Elements:</strong> 256×256 = 65,536 per matrix</p>
+                </div>
+                <div class="phase-detail">
+                    <h4>Memory Configuration</h4><br>
+                    <p><strong>Shared Memory:</strong> 2×32×32×4 bytes = 8KB per block</p><br>
+                    <p><strong>Global Memory:</strong> 256×256×4 bytes = 256KB per matrix</p>
+                </div>
+            </div>
+        </div>
+        
+        
+        <div class="info-panel">
+            <h3>Current Phase & Tile </h3>
+            <div class="phase-info" id="phaseDetails"></div>
+           
+        </div>
+        <div>
+            <div class="computation-flow" id="computationFlow" style="display: none;">
+                <div class="flow-item matrix-a" id="flowMatrixA">A(0,0)</div>
+                <div class="flow-operator">×</div>
+                <div class="flow-item matrix-b" id="flowMatrixB">B(0,0)</div>
+                <div class="flow-operator">=</div>
+                <div class="flow-item result" id="flowResult">Partial C(0,0)</div>
+            </div>
+        </div>
+        
+        <div class="matrices-container">
+            <div class="matrix-section">
+                <div class="matrix-title"> Matrix A (8×8 tiles)</div>
+                <div class="matrix-grid" id="matrixA"></div>
+            </div>
+            <div class="matrix-section">
+                <div class="matrix-title"> Matrix B (8×8 tiles)</div>
+                <div class="matrix-grid" id="matrixB"></div>
+            </div>
+            <div class="matrix-section">
+                <div class="matrix-title"> Matrix C (Result)</div>
+                <div class="matrix-grid" id="matrixC"></div>
+            </div>
+        </div>
+        
+        
+    </div>
+    
+    <script>
+        // Global variables
+        let currentTile = { row: 0, col: 0 };
+        let currentPhase = 0;
+        let isAnimating = false;
+        let animationInterval = null;
+        const TOTAL_PHASES = 8;
+        const GRID_SIZE = 8;
+        
+        // Initialize the visualization
+        function init() {
+            createMatrixGrids();
+            createPhaseIndicator();
+            updateVisualization();
+        }
+        
+        // Create the 8x8 tile grids for each matrix
+        function createMatrixGrids() {
+            ['matrixA', 'matrixB', 'matrixC'].forEach(matrixId => {
+                const grid = document.getElementById(matrixId);
+                grid.innerHTML = '';
+                
+                for (let row = 0; row < GRID_SIZE; row++) {
+                    for (let col = 0; col < GRID_SIZE; col++) {
+                        const tile = document.createElement('div');
+                        tile.className = 'tile';
+                        tile.textContent = `${row},${col}`;
+                        tile.dataset.row = row;
+                        tile.dataset.col = col;
+                        
+                        // Add click handler for Matrix C tiles
+                        if (matrixId === 'matrixC') {
+                            tile.onclick = () => selectTile(row, col);
+                        }
+                        
+                        grid.appendChild(tile);
+                    }
+                }
+            });
+        }
+        
+        // Create phase indicator circles
+        function createPhaseIndicator() {
+            const indicator = document.getElementById('phaseIndicator');
+            indicator.innerHTML = '';
+            
+            for (let phase = 0; phase < TOTAL_PHASES; phase++) {
+                const circle = document.createElement('div');
+                circle.className = 'phase-circle pending';
+                circle.textContent = phase;
+                circle.onclick = () => setPhase(phase);
+                circle.id = `phase-${phase}`;
+                indicator.appendChild(circle);
+            }
+        }
+        
+        // Select a tile for visualization
+        function selectTile(row, col) {
+            if (row < 0 || row >= GRID_SIZE || col < 0 || col >= GRID_SIZE) {
+                showError('Invalid tile coordinates. Please use values between 0-7.');
+                return;
+            }
+            
+            currentTile = { row, col };
+            document.getElementById('tileRow').value = row;
+            document.getElementById('tileCol').value = col;
+            clearError();
+            updateVisualization();
+        }
+        
+        // Update visualization based on current tile and phase
+        function updateVisualization() {
+            const tileRow = parseInt(document.getElementById('tileRow').value);
+            const tileCol = parseInt(document.getElementById('tileCol').value);
+
+            currentTile = { row:tileRow, col:tileCol };
+            console.log("Inside Update Visualization", currentTile)
+            
+            if (isNaN(tileRow) || isNaN(tileCol) || tileRow < 0 || tileRow >= GRID_SIZE || tileCol < 0 || tileCol >= GRID_SIZE) {
+                showError('Please enter valid tile coordinates (0-7).');
+                return;
+            }
+            
+            updateMatrixHighlights();
+            updatePhaseIndicator();
+            updateInfoPanel();
+        }
+        
+        // Update matrix tile highlights
+        function updateMatrixHighlights() {
+            // Clear all highlights
+            document.querySelectorAll('.tile').forEach(tile => {
+                tile.className = 'tile';
+            });
+            
+            
+            // Get current phase tiles
+            const matrixATile = { row: currentTile.row, col: currentPhase };
+            const matrixBTile = { row: currentPhase, col: currentTile.col };
+            
+            console.log("Matrix A Tile:", matrixATile)
+            console.log("Matrix B Tile:", matrixBTile)
+            // Highlight Matrix A tiles
+            document.querySelectorAll('#matrixA .tile').forEach(tile => {
+                const row = parseInt(tile.dataset.row);
+                const col = parseInt(tile.dataset.col);
+                
+                if (row === matrixATile.row && col === matrixATile.col) {
+                    tile.className = 'tile active-a';
+                } else if (row === currentTile.row) {
+                    tile.className = 'tile required-a';
+                }
+            });
+            
+            // Highlight Matrix B tiles
+            document.querySelectorAll('#matrixB .tile').forEach(tile => {
+                const row = parseInt(tile.dataset.row);
+                const col = parseInt(tile.dataset.col);
+                
+                if (row === matrixBTile.row && col === matrixBTile.col) {
+                    tile.className = 'tile active-b';
+                } else if (col === currentTile.col) {
+                    tile.className = 'tile required-b';
+                }
+            });
+            
+            // Highlight selected tile in Matrix C
+            document.querySelectorAll('#matrixC .tile').forEach(tile => {
+                const row = parseInt(tile.dataset.row);
+                const col = parseInt(tile.dataset.col);
+                
+                if (row === currentTile.row && col === currentTile.col) {
+                    tile.className = 'tile selected';
+                }
+            });
+        }
+        
+        // Update phase indicator
+        function updatePhaseIndicator() {
+            for (let phase = 0; phase < TOTAL_PHASES; phase++) {
+                const circle = document.getElementById(`phase-${phase}`);
+                if (phase < currentPhase) {
+                    circle.className = 'phase-circle completed';
+                } else if (phase === currentPhase) {
+                    circle.className = 'phase-circle active';
+                } else {
+                    circle.className = 'phase-circle pending';
+                }
+            }
+        }
+        
+        // Update information panel
+        function updateInfoPanel() {
+            const matrixATile = `A(${currentTile.row},${currentPhase})`;
+            const matrixBTile = `B(${currentPhase},${currentTile.col})`;
+            const resultTile = `C(${currentTile.row},${currentTile.col})`;
+            
+            // Update current info
+            
+           /*  const currentInfo = document.getElementById('currentInfo');
+            currentInfo.innerHTML = `
+                <div class="phase-detail"> 
+                <strong>Computing Tile ${resultTile}</strong><br>
+                Phase ${currentPhase + 1} of ${TOTAL_PHASES}: Loading ${matrixATile} and ${matrixBTile}
+                </div>`; */
+            
+            // Show computation flow
+            const flow = document.getElementById('computationFlow');
+            flow.style.display = 'flex';
+            
+            document.getElementById('flowMatrixA').textContent = matrixATile;
+            document.getElementById('flowMatrixB').textContent = matrixBTile;
+            document.getElementById('flowResult').textContent = `Partial ${resultTile}`;
+            
+            // Update phase details
+            updatePhaseDetails();
+        }
+        
+        // Update detailed phase information
+        function updatePhaseDetails() {
+
+            const matrixATile = `A(${currentTile.row},${currentPhase})`;
+            const matrixBTile = `B(${currentPhase},${currentTile.col})`;
+            const resultTile = `C(${currentTile.row},${currentTile.col})`;
+
+            const details = document.getElementById('phaseDetails');
+            details.innerHTML = `
+                <div class="phase-detail">
+                    <h4>Current Phase: ${currentPhase}</h4>
+                     <strong>Computing Tile ${resultTile}</strong><br>
+                     <strong>Phase ${currentPhase + 1} of ${TOTAL_PHASES}:</strong> Loading ${matrixATile} and ${matrixBTile}
+                    <p><strong>Loading:</strong> A(${currentTile.row},${currentPhase}) and B(${currentPhase},${currentTile.col}) into shared memory</p>
+                    <p><strong>Computing:</strong> 32×32 = 1,024 partial products</p>
+                    <p><strong>Progress:</strong> ${currentPhase + 1}/${TOTAL_PHASES} phases completed</p>
+                </div>
+               
+            `;
+        }
+        
+        // Animation controls
+        function toggleAnimation() {
+            const btn = document.getElementById('playBtn');
+            
+            if (isAnimating) {
+                clearInterval(animationInterval);
+                isAnimating = false;
+                btn.textContent = '▶️ Play Animation';
+            } else {
+                animationInterval = setInterval(() => {
+                    currentPhase = (currentPhase + 1) % TOTAL_PHASES;
+                    updateVisualization();
+                }, 1500);
+                isAnimating = true;
+                btn.textContent = '⏸️ Pause Animation';
+            }
+        }
+        
+        function nextPhase() {
+            currentPhase = (currentPhase + 1) % TOTAL_PHASES;
+            updateVisualization();
+        }
+        
+        function previousPhase() {
+            currentPhase = (currentPhase - 1 + TOTAL_PHASES) % TOTAL_PHASES;
+            updateVisualization();
+        }
+        
+        function setPhase(phase) {
+            currentPhase = phase;
+            updateVisualization();
+        }
+        
+        function resetPhase() {
+            currentPhase = 0;
+            updateVisualization();
+        }
+        
+        // Error handling
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.innerHTML = `<div class="error">${message}</div>`;
+        }
+        
+        function clearError() {
+            document.getElementById('error-message').innerHTML = '';
+        }
+        
+        // Initialize on page load
+        window.onload = init;
+    </script>
+</body>
+</html>
