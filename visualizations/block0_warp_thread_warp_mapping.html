@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block(0,0)=>Warp=>Output Mapping</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 30px;
+            max-width: 1400px;
+            width: 100%;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #6ba86b, #4a7c4a);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .title {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .processing-hierarchy {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .hierarchy-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .info-section {
+            margin-bottom: 20px;
+        }
+        
+        .info-item {
+            background: #f0f8f0;
+            border-left: 4px solid #6ba86b;
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #2d5a2d;
+            margin-right: 10px;
+        }
+        
+        .info-text {
+            color: #4a7c4a;
+        }
+        
+        .warp-section {
+            margin-bottom: 30px;
+        }
+        
+        .warp-header {
+            background: linear-gradient(135deg, #6ba86b, #5a9d5a);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+        
+        .thread-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .thread-cell {
+            background: linear-gradient(135deg, #a8d4a8, #91c791);
+            color: #2d5a2d;
+            padding: 8px 4px;
+            text-align: center;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: 1px solid #7fb87f;
+        }
+        
+        .thread-cell:hover {
+            background: linear-gradient(135deg, #91c791, #7fb87f);
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 10;
+            position: relative;
+        }
+        
+        .ellipsis-cell {
+            background: #e9ecef;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            border-radius: 4px;
+        }
+        
+        .vertical-ellipsis {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.5em;
+            color: #6c757d;
+            font-weight: bold;
+        }
+        
+        .warp-note {
+            text-align: center;
+            font-style: italic;
+            color: #6c757d;
+            margin: 20px 0;
+            font-size: 1.1em;
+        }
+        
+        .last-warp {
+            margin-bottom: 0;
+        }
+
+       .calc-modal-content {
+    background: linear-gradient(135deg, #f0fff4 0%, #e6ffed 100%);
+    padding: clamp(16px, 2.5vw, 24px);
+    border-radius: 12px;
+    margin: clamp(20px, 4vh, 30px) auto;
+    border: 3px solid #38a169;
+    box-shadow: 0 8px 32px rgba(56, 161, 105, 0.15);
+    max-width: 600px;
+    width: 90%;
+    position: relative;
+}
+
+.calc-header {
+    background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+    color: white;
+    padding: clamp(16px, 2.5vw, 20px);
+    border-radius: 8px;
+    margin-bottom: clamp(16px, 3vh, 20px);
+    text-align: center;
+}
+
+.calc-title {
+    font-size: clamp(1.2em, 2.5vw, 1.5em);
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.calc-subtitle {
+    font-size: clamp(0.9em, 1.8vw, 1em);
+    opacity: 0.9;
+}
+
+.thread-badge {
+    background: rgba(255,255,255,0.2);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    padding: clamp(6px, 1.2vw, 8px) clamp(12px, 2.4vw, 16px);
+    display: inline-block;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.calculation-steps {
+    background: #f0fff4;
+    padding: clamp(16px, 2.5vw, 20px);
+    border-radius: 8px;
+    margin: clamp(15px, 3vh, 20px) 0;
+    border: 2px solid #c6f6d5;
+    clear: both;
+}
+
+.section-title {
+    font-size: clamp(1.1em, 2.2vw, 1.3em);
+    font-weight: bold;
+    color: #2f855a;
+    margin-bottom: clamp(12px, 2.4vh, 16px);
+    border-bottom: 2px solid #38a169;
+    padding-bottom: 8px;
+}
+
+.calc-step-box {
+    background: white;
+    border: 1px solid #c6f6d5;
+    border-radius: 8px;
+    padding: clamp(12px, 2.4vw, 16px);
+    margin: clamp(10px, 2vh, 12px) 0;
+}
+
+.step-title {
+    font-weight: bold;
+    color: #2f855a;
+    margin-bottom: 8px;
+    font-size: clamp(1em, 2vw, 1.1em);
+}
+
+.formula-display {
+    background: #e6ffed;
+    border-left: 4px solid #38a169;
+    padding: clamp(10px, 2vw, 12px);
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: clamp(0.95em, 1.9vw, 1.1em);
+    color: #2f855a;
+    font-weight: bold;
+    margin: 8px 0;
+}
+
+.calc-display {
+    background: #fff5cd;
+    border-left: 0px solid #d69e2e;
+    padding: clamp(10px, 2vw, 12px);
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: clamp(0.95em, 1.9vw, 1.1em);
+    color: #744210;
+    font-weight: bold;
+    margin: 8px 0;
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">Block(0,0) Warp Calculations (Thread to Warp Mapping) </div>
+        </div>
+        
+        <div class="processing-hierarchy">
+            <div class="hierarchy-title">Processing Hierarchy: Block(0,0) →  Warp  -> Thread(y,x)</div>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-item">
+                <span class="info-label">Thread Block:</span>
+                <span class="info-text">Each Block has 1024 Threads (32×32 configuration)</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Warp Division:</span>
+                <span class="info-text">1024 Threads organized into 32 Warps (32 threads per warp)</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Output Elements:</span>
+                <span class="info-text">Threads in Block calculate 1024 output matrix elements</span>
+            </div>
+        </div>
+        
+        <!-- Warp 0 -->
+        <div class="warp-section">
+            <div class="warp-header">Warp 0 (Threads 0-31)</div>
+            <div class="thread-grid">
+                <div class="thread-cell" onclick="showWarpCalculation(0, 0)">C(0,0)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(0, 1)">C(0,1)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(0, 2)">C(0,2)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(0, 3)">C(0,3)</div>
+                <div class="ellipsis-cell">...</div>
+                <div class="thread-cell" onclick="showWarpCalculation(0, 28)">C(0,28)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(0, 29)">C(0,29)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(0, 31)">C(0,31)</div>
+            </div>
+        </div>
+        
+        <!-- Warp 1 -->
+        <div class="warp-section">
+            <div class="warp-header">Warp 1 (Threads 32-63)</div>
+            <div class="thread-grid">
+                <div class="thread-cell" onclick="showWarpCalculation(1, 0)">C(1,0)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(1, 1)">C(1,1)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(1, 2)">C(1,2)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(1, 3)">C(1,3)</div>
+                <div class="ellipsis-cell">...</div>
+                <div class="thread-cell" onclick="showWarpCalculation(1, 28)">C(1,28)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(1, 29)">C(1,29)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(1, 31)">C(1,31)</div>
+            </div>
+        </div>
+        
+        <!-- Warp 2 -->
+        <div class="warp-section">
+            <div class="warp-header">Warp 2 (Threads 64-95)</div>
+            <div class="thread-grid">
+                <div class="thread-cell" onclick="showWarpCalculation(2, 0)">C(2,0)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(2, 1)">C(2,1)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(2, 2)">C(2,2)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(2, 3)">C(2,3)</div>
+                <div class="ellipsis-cell">...</div>
+                <div class="thread-cell" onclick="showWarpCalculation(2, 28)">C(2,28)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(2, 29)">C(2,29)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(2, 31)">C(2,31)</div>
+            </div>
+        </div>
+        
+        <!-- Vertical ellipsis -->
+        <div class="vertical-ellipsis">⋮</div>
+        
+        <div class="warp-note">(28 more warps ...)</div>
+        
+        <!-- Warp 31 -->
+        <div class="warp-section last-warp">
+            <div class="warp-header">Warp 31 (Threads 992-1023)</div>
+            <div class="thread-grid">
+                <div class="thread-cell" onclick="showWarpCalculation(31, 0)">C(31,0)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(31, 1)">C(31,1)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(31, 2)">C(31,2)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(31, 3)">C(31,3)</div>
+                <div class="ellipsis-cell">...</div>
+                <div class="thread-cell" onclick="showWarpCalculation(31, 28)">C(31,28)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(31, 29)">C(31,29)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(31, 31)">C(31,31)</div>
+            </div>
+        </div>
+        
+        <!-- Calculation Modal -->
+        <div id="calculationModal" class="calculation-modal">
+            <div class="calc-modal-content">
+                
+                <div class="calc-header">
+                    <!-- <div class="calc-title" id="calcTitle"><h>Select Thread</h></div> -->
+                    <div class="thread-badge" id="threadBadge">Select Thread</div>
+                </div>
+                
+                <div class="calculation-steps", id="calcSteps" ></div>
+                
+                
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showWarpCalculation(threadY, threadX) {
+            const blockDimX = 32;
+            const threadId = threadY * blockDimX + threadX;
+            const warpId = Math.floor(threadId / 32);
+            
+            // Update header content
+            document.getElementById('threadBadge').textContent = `Thread(y,x) =Thread C(${threadY},${threadX}) `;
+            
+            // Generate calculation steps with proper mathematical layout
+            const calcSteps = document.getElementById('calcSteps');
+            calcSteps.innerHTML = `
+
+                <div class="formula-section">
+                    <div class="formula">Global ThreadId = threadIdx.y × blockDim.x + threadIdx.x</div>
+                </div>
+                <div class="calc-step given">
+                    <span class="step-icon"></span>
+                    <div class="math-expression">threadIdx.y = ${threadY}, threadIdx.x = ${threadX}, blockDim.x = 32</div>
+                </div>
+                
+                <div class="calculation-box">
+                    
+                   
+                  
+                    <div class="calc-step calculation">
+                        <div class="math-expression">threadId = ${threadY} * ${blockDimX} + ${threadX} = ${threadY * blockDimX} + ${threadX} = ${threadId}</div>
+                    </div>
+                </div>
+                
+                <div class="calculation-box">
+                    
+                  
+                    <div class="calc-step calculation">
+                        <div class="math-expression">warpId = ${threadId}/32 = ${warpId}</div>
+                    </div>
+                </div>
+                
+                <div class="calc-step result">
+                    <span class="step-icon"></span>
+                    <div class="math-expression">Thread C(${threadY},${threadX}) belongs to Warp ${warpId}</div>
+                </div>
+            `;
+            
+            // Update result section
+            const warpStart = warpId * 32;
+            const warpEnd = warpStart + 31;
+            document.getElementById('resultDetails').textContent = `Warp ${warpId}: Threads ${warpStart}-${warpEnd}`;
+            
+            // Show modal with animation
+            const modal = document.getElementById('calculationModal');
+            modal.classList.add('show');
+        }
+        
+        function closeCalculationModal() {
+            document.getElementById('calculationModal').classList.remove('show');
+        }
+        
+        // Close modal when clicking outside
+        document.getElementById('calculationModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCalculationModal();
+            }
+        });
+    </script>
+</body>
+</html>
