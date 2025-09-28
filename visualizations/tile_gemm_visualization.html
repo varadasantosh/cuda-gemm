@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CUDA Tile Matrix Multiplication Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 5px;
+            font-size: clamp(12px, 1.5vw, 14px);
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: clamp(8px, 1.5vw, 15px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            height: 100vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: clamp(10px, 2vh, 20px);
+        }
+        
+        .header h1 {
+            color: #333;
+            margin-bottom: 5px;
+            font-size: clamp(1.2em, 4vw, 1.8em);
+        }
+        
+        .input-section {
+            background: #f8f9fa;
+            padding: clamp(8px, 1.5vw, 15px);
+            border-radius: 8px;
+            margin-bottom: clamp(10px, 2vh, 15px);
+            text-align: center;
+        }
+        
+        .input-section h3 {
+            font-size: clamp(1em, 2.5vw, 1.2em);
+            margin-bottom: 10px;
+        }
+        
+        .input-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        
+        .input-group label {
+            font-weight: bold;
+            color: #333;
+            font-size: clamp(11px, 1.8vw, 13px);
+            white-space: nowrap;
+        }
+        
+        .input-group input {
+            padding: 5px 8px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            width: 50px;
+            text-align: center;
+            font-size: clamp(12px, 2vw, 14px);
+        }
+        
+        .input-group input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: clamp(11px, 1.8vw, 13px);
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #5a67d8;
+        }
+        
+        .phase-indicator {
+            display: flex;
+            justify-content: center;
+            gap: clamp(3px, 1vw, 8px);
+            margin: clamp(8px, 1.5vh, 15px) 0;
+            flex-wrap: wrap;
+        }
+        
+        .phase-circle {
+            width: clamp(25px, 4vw, 35px);
+            height: clamp(25px, 4vw, 35px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            font-size: clamp(10px, 1.8vw, 14px);
+        }
+        
+        .phase-circle.completed {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .phase-circle.active {
+            background: #667eea;
+            color: white;
+            transform: scale(1.1);
+            border-color: #4c51bf;
+        }
+        
+        .phase-circle.pending {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        
+        .config-section {
+            background: #f7fafc;
+            padding: clamp(8px, 1.5vw, 12px);
+            border-radius: 8px;
+            margin-bottom: clamp(8px, 1.5vh, 12px);
+            border: 2px solid #38a169;
+        }
+        
+        .config-section h3 {
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: clamp(1em, 2.2vw, 1.1em);
+        }
+        
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: clamp(8px, 1.5vw, 15px);
+        }
+        
+        .config-detail {
+            background: white;
+            padding: clamp(8px, 1.5vw, 12px);
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .config-detail h4 {
+            font-size: clamp(0.9em, 2vw, 1em);
+            margin-bottom: 5px;
+        }
+        
+        .config-detail p {
+            font-size: clamp(0.8em, 1.6vw, 0.9em);
+            line-height: 1.4;
+            margin: 3px 0;
+        }
+        
+        .matrices-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: clamp(10px, 2vw, 20px);
+            margin-bottom: clamp(40px, 8vh, 60px);
+            padding: 0 clamp(5px, 1vw, 10px);
+        }
+        
+        .matrix-section {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+            padding: clamp(10px, 2vw, 15px);
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            min-height: clamp(320px, 40vh, 400px);
+            overflow: hidden;
+        }
+        
+        .matrix-section.matrix-a {
+            border-color: #3182ce;
+            background: linear-gradient(145deg, #f8fbff 0%, #e6f3ff 100%);
+        }
+        
+        .matrix-section.matrix-b {
+            border-color: #38a169;
+            background: linear-gradient(145deg, #f0fff4 0%, #e6fffa 100%);
+        }
+        
+        .matrix-section.matrix-c {
+            border-color: #9f7aea;
+            background: linear-gradient(145deg, #faf5ff 0%, #f3e8ff 100%);
+        }
+        
+        .matrix-title {
+            font-size: clamp(1em, 2.5vw, 1.3em);
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #2d3748;
+            padding: clamp(6px, 1.5vw, 10px);
+            border-radius: 6px;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: clamp(1px, 0.2vw, 2px);
+            background: white;
+            padding: clamp(6px, 1vw, 10px);
+            border-radius: 8px;
+            margin: 0 auto;
+            max-width: 100%;
+            width: 100%;
+            border: 1px solid #cbd5e0;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+            flex: 1;
+        }
+        
+        .tile {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(7px, 1.1vw, 10px);
+            font-weight: bold;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            color: #4a5568;
+            min-height: clamp(18px, 2.5vw, 25px);
+            height: clamp(18px, 2.5vw, 25px);
+        }
+        
+        .tile.active-a {
+            background: #3182ce;
+            color: white;
+            transform: scale(1.08);
+            box-shadow: 0 3px 6px rgba(49, 130, 206, 0.5);
+            border-color: #2c5282;
+            z-index: 10;
+            position: relative;
+        }
+        
+        .tile.active-b {
+            background: #38a169;
+            color: white;
+            transform: scale(1.08);
+            box-shadow: 0 3px 6px rgba(56, 161, 105, 0.5);
+            border-color: #2f855a;
+            z-index: 10;
+            position: relative;
+        }
+        
+        .tile.required-a {
+            background: #bee3f8;
+            color: #1a365d;
+            border-color: #90cdf4;
+        }
+        
+        .tile.required-b {
+            background: #c6f6d5;
+            color: #1a202c;
+            border-color: #9ae6b4;
+        }
+        
+        .tile.selected {
+            background: #9f7aea;
+            color: white;
+            transform: scale(1.08);
+            box-shadow: 0 3px 6px rgba(159, 122, 234, 0.5);
+            border-color: #805ad5;
+            z-index: 10;
+            position: relative;
+        }
+        
+        .phase-info-section {
+            background: #f0fff4;
+            padding: clamp(8px, 1.5vw, 12px);
+            border-radius: 8px;
+            margin: clamp(15px, 3vh, 20px) 0 clamp(10px, 2vh, 15px) 0;
+            border: 2px solid #38a169;
+            clear: both;
+        }
+        
+        .phase-info-section h3 {
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: clamp(1em, 2.2vw, 1.1em);
+        }
+        
+        .phase-detail {
+            background: white;
+            padding: clamp(8px, 1.5vw, 12px);
+            border-radius: 6px;
+            border: 1px solid #38a169;
+        }
+        
+        .phase-detail h4 {
+            font-size: clamp(0.9em, 2vw, 1em);
+            margin-bottom: 5px;
+        }
+        
+        .phase-detail p {
+            font-size: clamp(0.8em, 1.6vw, 0.9em);
+            line-height: 1.4;
+            margin: 3px 0;
+        }
+        
+        .computation-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(5px, 1.5vw, 10px);
+            margin: clamp(8px, 1.5vh, 12px) 0;
+            flex-wrap: wrap;
+        }
+        
+        .flow-item {
+            padding: clamp(6px, 1.2vw, 10px) clamp(8px, 1.5vw, 12px);
+            border-radius: 6px;
+            font-weight: bold;
+            color: white;
+            min-width: clamp(60px, 8vw, 80px);
+            text-align: center;
+            font-size: clamp(0.8em, 1.6vw, 0.9em);
+        }
+        
+        .flow-item.matrix-a { background: #3182ce; }
+        .flow-item.matrix-b { background: #38a169; }
+        .flow-item.result { background: #9f7aea; }
+        
+        .flow-operator { 
+            font-size: clamp(1.2em, 3vw, 1.5em); 
+            font-weight: bold; 
+            color: #4a5568; 
+        }
+        
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: clamp(8px, 1.5vw, 12px);
+            border-radius: 6px;
+            margin: 5px 0;
+            border-left: 4px solid #e53e3e;
+            font-size: clamp(0.8em, 1.6vw, 0.9em);
+        }
+        
+        /* Responsive breakpoints */
+        @media (max-width: 900px) {
+            .matrices-container {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .input-controls {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .phase-indicator {
+                gap: 2px;
+            }
+            
+            .computation-flow {
+                flex-direction: column;
+                gap: 3px;
+            }
+        }
+        
+        /* Iframe optimizations - force 3 column layout for wider iframes */
+        @media (min-width: 600px) {
+            .matrices-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        /* Iframe optimizations */
+        @media (max-height: 600px) {
+            .container {
+                padding: 5px;
+            }
+            
+            .header {
+                margin-bottom: 5px;
+            }
+            
+            .input-section, .config-section, .phase-info-section {
+                margin-bottom: 5px;
+                padding: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>CUDA Tile Matrix Multiplication</h1>
+        </div>
+        
+        <div class="input-section">
+            <h3>Select Output Tile to Visualize</h3>
+            <div class="input-controls">
+                <div class="input-group">
+                    <label for="tileRow">Tile Row:</label>
+                    <input type="number" id="tileRow" min="0" max="7" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="tileCol">Tile Col:</label>
+                    <input type="number" id="tileCol" min="0" max="7" value="0">
+                </div>
+                <button class="btn" onclick="updateVisualization()">Visualize Tile</button>
+            </div>
+            <div id="error-message"></div>
+        </div>
+        
+        <div class="phase-indicator" id="phaseIndicator"></div>
+
+        <div class="config-section">
+            <h3>Kernel & Tile Configuration</h3>
+            <div class="config-grid">
+                <div class="config-detail">
+                    <h4>CUDA Configuration</h4>
+                    <p><strong>Grid Size:</strong> 8×8 thread blocks</p>
+                    <p><strong>Block Dimensions:</strong> 32×32 threads</p>
+                    <p><strong>Tile Size:</strong> 32×32 elements each</p>
+                    <p><strong>Total Elements:</strong> 256×256 = 65,536 per matrix</p>
+                </div>
+                <div class="config-detail">
+                    <h4>Memory Configuration</h4>
+                    <p><strong>Shared Memory:</strong> 2×32×32×4 bytes = 8KB per block</p>
+                    <p><strong>Global Memory:</strong> 256×256×4 bytes = 256KB per matrix</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="matrices-container">
+            <div class="matrix-section matrix-a">
+                <div class="matrix-title">Matrix A (8×8 tiles)</div>
+                <div class="matrix-grid" id="matrixA"></div>
+            </div>
+            <div class="matrix-section matrix-b">
+                <div class="matrix-title">Matrix B (8×8 tiles)</div>
+                <div class="matrix-grid" id="matrixB"></div>
+            </div>
+            <div class="matrix-section matrix-c">
+                <div class="matrix-title">Matrix C (Result)</div>
+                <div class="matrix-grid" id="matrixC"></div>
+            </div>
+        </div>
+        
+        <div class="phase-info-section">
+            <h3>Current Phase & Tile</h3>
+            <div class="phase-detail" id="phaseDetails"></div>
+        </div>
+        
+        <div class="computation-flow" id="computationFlow">
+            <div class="flow-item matrix-a" id="flowMatrixA">A(0,0)</div>
+            <div class="flow-operator">×</div>
+            <div class="flow-item matrix-b" id="flowMatrixB">B(0,0)</div>
+            <div class="flow-operator">=</div>
+            <div class="flow-item result" id="flowResult">Partial C(0,0)</div>
+        </div>
+    </div>
+    
+    <script>
+        // Global variables
+        let currentTile = { row: 0, col: 0 };
+        let currentPhase = 0;
+        let isAnimating = false;
+        let animationInterval = null;
+        const TOTAL_PHASES = 8;
+        const GRID_SIZE = 8;
+        
+        // Initialize the visualization
+        function init() {
+            createMatrixGrids();
+            createPhaseIndicator();
+            updateVisualization();
+        }
+        
+        // Create the 8x8 tile grids for each matrix
+        function createMatrixGrids() {
+            ['matrixA', 'matrixB', 'matrixC'].forEach(matrixId => {
+                const grid = document.getElementById(matrixId);
+                grid.innerHTML = '';
+                
+                for (let row = 0; row < GRID_SIZE; row++) {
+                    for (let col = 0; col < GRID_SIZE; col++) {
+                        const tile = document.createElement('div');
+                        tile.className = 'tile';
+                        tile.textContent = `${row},${col}`;
+                        tile.dataset.row = row;
+                        tile.dataset.col = col;
+                        
+                        // Add click handler for Matrix C tiles
+                        if (matrixId === 'matrixC') {
+                            tile.onclick = () => selectTile(row, col);
+                        }
+                        
+                        grid.appendChild(tile);
+                    }
+                }
+            });
+        }
+        
+        // Create phase indicator circles
+        function createPhaseIndicator() {
+            const indicator = document.getElementById('phaseIndicator');
+            indicator.innerHTML = '';
+            
+            for (let phase = 0; phase < TOTAL_PHASES; phase++) {
+                const circle = document.createElement('div');
+                circle.className = 'phase-circle pending';
+                circle.textContent = phase;
+                circle.onclick = () => setPhase(phase);
+                circle.id = `phase-${phase}`;
+                indicator.appendChild(circle);
+            }
+        }
+        
+        // Select a tile for visualization
+        function selectTile(row, col) {
+            if (row < 0 || row >= GRID_SIZE || col < 0 || col >= GRID_SIZE) {
+                showError('Invalid tile coordinates. Please use values between 0-7.');
+                return;
+            }
+            
+            currentTile = { row, col };
+            document.getElementById('tileRow').value = row;
+            document.getElementById('tileCol').value = col;
+            clearError();
+            updateVisualization();
+        }
+        
+        // Update visualization based on current tile and phase
+        function updateVisualization() {
+            const tileRow = parseInt(document.getElementById('tileRow').value);
+            const tileCol = parseInt(document.getElementById('tileCol').value);
+            
+            currentTile = { row: tileRow, col: tileCol };
+            
+            if (isNaN(tileRow) || isNaN(tileCol) || tileRow < 0 || tileRow >= GRID_SIZE || tileCol < 0 || tileCol >= GRID_SIZE) {
+                showError('Please enter valid tile coordinates (0-7).');
+                return;
+            }
+            
+            clearError();
+            updateMatrixHighlights();
+            updatePhaseIndicator();
+            updateInfoPanel();
+        }
+        
+        // Update matrix tile highlights
+        function updateMatrixHighlights() {
+            // Clear all highlights
+            document.querySelectorAll('.tile').forEach(tile => {
+                tile.className = 'tile';
+            });
+            
+            // Get current phase tiles
+            const matrixATile = { row: currentTile.row, col: currentPhase };
+            const matrixBTile = { row: currentPhase, col: currentTile.col };
+            
+            // Highlight Matrix A tiles
+            document.querySelectorAll('#matrixA .tile').forEach(tile => {
+                const row = parseInt(tile.dataset.row);
+                const col = parseInt(tile.dataset.col);
+                
+                if (row === matrixATile.row && col === matrixATile.col) {
+                    tile.className = 'tile active-a';
+                } else if (row === currentTile.row) {
+                    tile.className = 'tile required-a';
+                }
+            });
+            
+            // Highlight Matrix B tiles
+            document.querySelectorAll('#matrixB .tile').forEach(tile => {
+                const row = parseInt(tile.dataset.row);
+                const col = parseInt(tile.dataset.col);
+                
+                if (row === matrixBTile.row && col === matrixBTile.col) {
+                    tile.className = 'tile active-b';
+                } else if (col === currentTile.col) {
+                    tile.className = 'tile required-b';
+                }
+            });
+            
+            // Highlight selected tile in Matrix C
+            document.querySelectorAll('#matrixC .tile').forEach(tile => {
+                const row = parseInt(tile.dataset.row);
+                const col = parseInt(tile.dataset.col);
+                
+                if (row === currentTile.row && col === currentTile.col) {
+                    tile.className = 'tile selected';
+                }
+            });
+        }
+        
+        // Update phase indicator
+        function updatePhaseIndicator() {
+            for (let phase = 0; phase < TOTAL_PHASES; phase++) {
+                const circle = document.getElementById(`phase-${phase}`);
+                if (phase < currentPhase) {
+                    circle.className = 'phase-circle completed';
+                } else if (phase === currentPhase) {
+                    circle.className = 'phase-circle active';
+                } else {
+                    circle.className = 'phase-circle pending';
+                }
+            }
+        }
+        
+        // Update information panel
+        function updateInfoPanel() {
+            const matrixATile = `A(${currentTile.row},${currentPhase})`;
+            const matrixBTile = `B(${currentPhase},${currentTile.col})`;
+            const resultTile = `C(${currentTile.row},${currentTile.col})`;
+            
+            // Update computation flow
+            document.getElementById('flowMatrixA').textContent = matrixATile;
+            document.getElementById('flowMatrixB').textContent = matrixBTile;
+            document.getElementById('flowResult').textContent = `Partial ${resultTile}`;
+            
+            // Update phase details
+            updatePhaseDetails();
+        }
+        
+        // Update detailed phase information
+        function updatePhaseDetails() {
+            const matrixATile = `A(${currentTile.row},${currentPhase})`;
+            const matrixBTile = `B(${currentPhase},${currentTile.col})`;
+            const resultTile = `C(${currentTile.row},${currentTile.col})`;
+            
+            const details = document.getElementById('phaseDetails');
+            details.innerHTML = `
+                <h4>Current Phase: ${currentPhase}</h4>
+                <p><strong>Computing Tile ${resultTile}</strong></p>
+                <p><strong>Phase ${currentPhase + 1} of ${TOTAL_PHASES}:</strong> Loading ${matrixATile} and ${matrixBTile}</p>
+                <p><strong>Loading:</strong> A(${currentTile.row},${currentPhase}) and B(${currentPhase},${currentTile.col}) into shared memory</p>
+                <p><strong>Computing:</strong> 32×32 = 1,024 partial products</p>
+                <p><strong>Progress:</strong> ${currentPhase + 1}/${TOTAL_PHASES} phases completed</p>
+            `;
+        }
+        
+        // Phase control functions
+        function setPhase(phase) {
+            currentPhase = phase;
+            updateVisualization();
+        }
+        
+        // Error handling
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.innerHTML = `<div class="error">${message}</div>`;
+        }
+        
+        function clearError() {
+            document.getElementById('error-message').innerHTML = '';
+        }
+        
+        // Initialize on page load
+        window.onload = init;
+    </script>
+</body>
+</html>
