@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2×2 GEMM Walkthrough</title>
+    <style>
+        .section {
+            background: white;
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .matrix-visual {
+            display: inline-block;
+            margin: 10px;
+        }
+
+         .matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 5px;
+            padding: 10px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .cell {
+            padding: 15px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .cell-a { background: #ffcdd2; }
+        .cell-b { background: #bbdefb; }
+        .cell-c { background: #c8e6c9; }
+     </style>
+</head>
+<body>    
+
+<div class="section">
+        <h2>The Setup</h2>
+        
+        <p><strong>Matrices:</strong></p>
+        <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+            <div class="matrix-visual">
+                <div style="text-align: center; margin-bottom: 5px; font-weight: bold;">Matrix A (2×2)</div>
+                <div class="matrix-grid">
+                    <div class="cell cell-a">A[0][0]=1</div>
+                    <div class="cell cell-a">A[0][1]=2</div>
+                    <div class="cell cell-a">A[1][0]=3</div>
+                    <div class="cell cell-a">A[1][1]=4</div>
+                </div>
+            </div>
+            <div style="font-size: 24px;">×</div>
+            <div class="matrix-visual">
+                <div style="text-align: center; margin-bottom: 5px; font-weight: bold;">Matrix B (2×2)</div>
+                <div class="matrix-grid">
+                    <div class="cell cell-b">B[0][0]=5</div>
+                    <div class="cell cell-b">B[0][1]=6</div>
+                    <div class="cell cell-b">B[1][0]=7</div>
+                    <div class="cell cell-b">B[1][1]=8</div>
+                </div>
+            </div>
+            <div style="font-size: 24px;">=</div>
+            <div class="matrix-visual">
+                <div style="text-align: center; margin-bottom: 5px; font-weight: bold;">Matrix C (2×2)</div>
+                <div class="matrix-grid">
+                    <div class="cell cell-c">C[0][0]=?</div>
+                    <div class="cell cell-c">C[0][1]=?</div>
+                    <div class="cell cell-c">C[1][0]=?</div>
+                    <div class="cell cell-c">C[1][1]=?</div>
+                </div>
+            </div>
+        </div>
+
+        <p><strong>Thread Layout:</strong></p>
+        <div class="matrix-grid" style="max-width: 300px;">
+            <div class="cell" style="background: #ffcdd2;">T(0,0)<br>row=0, col=0</div>
+            <div class="cell" style="background: #bbdefb;">T(0,1)<br>row=0, col=1</div>
+            <div class="cell" style="background: #c8e6c9;">T(1,0)<br>row=1, col=0</div>
+            <div class="cell" style="background: #fff59d;">T(1,1)<br>row=1, col=1</div>
+        </div>
+    </div>
