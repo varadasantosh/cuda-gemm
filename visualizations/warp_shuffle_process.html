@@ -416,15 +416,14 @@
                 const afterBcastB = B[k][col];
                 const computation = `${afterBcastA} × ${afterBcastB}`;
                 const result = afterBcastA * afterBcastB;
-                const prevC = C[row][col];
                 if (currentIteration === 0) {
-                    // Final iteration, accumulate result
+                    prevC = 0;
                     C[row][col] = result;
                     newC = C[row][col];
-                    console.log(`C[${row}][${col}]`, C[row][col])
                 }
                 
                 else{
+                    prevC = C[row][col];
                     newC = prevC + result;
                 }
                 
@@ -440,11 +439,14 @@
                         <td>C[${row}][${col}] = ${prevC} + ${result} = <strong>${newC}</strong></td>
                     </tr>
                 `;
+
+                
             });
             document.getElementById('summaryTableBody').innerHTML = tableHTML;
             
             updateMatrices();
             updateButtons();
+            
         }
 
         function updateMatrices() {
@@ -486,24 +488,18 @@
         }
 
         function nextIteration() {
-           
+            
                 currentIteration++;
                 updateDisplay();
         }
 
         function previousIteration() {
+            console.log('Current Iteration before decrement:', currentIteration);
             if (currentIteration > 0) {
                 currentIteration--;
                 // Recalculate C from scratch
                 C = [[0, 0], [0, 0]];
-                for (let k = 0; k <= currentIteration; k++) {
-                    for (let i = 0; i < 2; i++) {
-                        for (let j = 0; j < 2; j++) {
-                            console.log(C[i][j])
-                            C[i][j] += A[i][k] * B[k][j];
-                        }
-                    }
-                }
+              
                 updateDisplay();
             }
         }
