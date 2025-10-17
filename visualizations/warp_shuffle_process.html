@@ -5,19 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Warp Shuffle Visualization</title>
     <style>
+
+        html {
+        background: white; /* Same as body */
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f5f5;
             min-height: 100vh;
         }
         .container {
             background: white;
             border-radius: 12px;
             padding: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 40px rgba(141, 141, 141, 0);
         }
         h2 {
             color: #333;
@@ -232,14 +237,7 @@
             background: #bbdefb !important;
             border-color: #42a5f5 !important;
         }
-        .pipeline-note {
-            background: #fff3cd;
-            border-left: 4px solid #fff9c4;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 4px;
-            font-size: 14px;
-        }
+      
         .code-snippet {
             background: #f8f9fa;
             padding: 8px;
@@ -304,11 +302,9 @@
 
         <h3 style="text-align: center; color: #1a9c09; margin: 30px 0 20px 0;">Complete Pipeline for Iteration k=<span id="iterationNumPipeline">0</span></h3>
         
-    
-        
         <div class="pipeline-container" id="pipelineContent"></div>
 
-        <div style="margin-top: 30px; padding: 20px; background: #ffffff; border-radius: 8px;">
+        <div style="margin-top: 30px; padding: 20px; background: #eeeded; border-radius: 8px;">
             <h4 style="color: #1a9c09; margin-top: 0;">Step Summary</h4>
             <table id="summaryTable">
                 <thead>
@@ -362,7 +358,6 @@
             document.getElementById('iterationNumPipeline').textContent = k;
             
       
-
              const loadSteps = [
                 `<div class="phase-step }"><span >T(0,0) [Lane 0]:</span> col=${k}→ a=<span class="value-badge value-a">${A[0][k]}</span>, b=<span class="value-badge value-b">${B[k][0]}</span></div>`,
                 `<div class="phase-step }"><span }">T(0,1) [Lane 1]:</span> col=${k}→ a=<span class="value-badge">NA</span>, b=<span class="value-badge value-b">${B[k][1]}</span></div>`,
@@ -422,7 +417,16 @@
                 const computation = `${afterBcastA} × ${afterBcastB}`;
                 const result = afterBcastA * afterBcastB;
                 const prevC = C[row][col];
-                const newC = prevC + result;
+                if (currentIteration === 0) {
+                    // Final iteration, accumulate result
+                    C[row][col] = result;
+                    newC = C[row][col];
+                    console.log(`C[${row}][${col}]`, C[row][col])
+                }
+                
+                else{
+                    newC = prevC + result;
+                }
                 
               
                 
@@ -482,16 +486,9 @@
         }
 
         function nextIteration() {
-            if (currentIteration < maxIterations - 1) {
-                // Accumulate current iteration results into C
-                for (let i = 0; i < 2; i++) {
-                    for (let j = 0; j < 2; j++) {
-                        C[i][j] += A[i][currentIteration] * B[currentIteration][j];
-                    }
-                }
+           
                 currentIteration++;
                 updateDisplay();
-            }
         }
 
         function previousIteration() {
@@ -502,6 +499,7 @@
                 for (let k = 0; k <= currentIteration; k++) {
                     for (let i = 0; i < 2; i++) {
                         for (let j = 0; j < 2; j++) {
+                            console.log(C[i][j])
                             C[i][j] += A[i][k] * B[k][j];
                         }
                     }
