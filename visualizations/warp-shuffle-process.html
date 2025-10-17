@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warp Shuffle Visualization</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            align-items: center;
+            justify-content: center;
+        }
+        button {
+            padding: 12px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #1a9c09;
+            color: white;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        button:hover {
+            background: #1a9c09;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(26, 156, 9, 0.4);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .iteration-info {
+            font-size: 22px;
+            font-weight: bold;
+            color: #1a9c09;
+            padding: 10px 20px;
+            background: #f0f3ff;
+            border-radius: 8px;
+        }
+        
+        /* Thread color scheme */
+        .thread-0-0 { background: #ffb3ba !important; border-color: #ff8389 !important; } /* Pink - T(0,0) Lane 0 */
+        .thread-0-1 { background: #bae1ff !important; border-color: #89c9ff !important; } /* Blue - T(0,1) Lane 1 */
+        .thread-1-0 { background: #baffc9 !important; border-color: #89ffaa !important; } /* Green - T(1,0) Lane 2 */
+        .thread-1-1 { background: #ffffba !important; border-color: #ffff89 !important; } /* Yellow - T(1,1) Lane 3 */
+        
+   
+        
+        .setup-diagram {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .thread-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 120px);
+            gap: 10px;
+        }
+        .thread-box {
+            padding: 15px;
+            border: 3px solid;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .lane-info {
+            font-size: 11px;
+            margin-top: 5px;
+            opacity: 0.8;
+        }
+        
+        .pipeline-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 30px 0;
+        }
+        .phase-card {
+            background: white;
+            border: 2px solid #1a9c09;
+            border-radius: 8px;
+            padding: 15px;
+            position: relative;
+        }
+        .phase-card::after {
+            content: '→';
+            position: absolute;
+            right: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 30px;
+            color: #667eea;
+            font-weight: bold;
+        }
+        .phase-card:last-child::after {
+            content: '';
+        }
+        .phase-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            background: #1a9c09;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .phase-step {
+            font-size: 11px;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border-left: 3px solid;
+        }
+        
+        .value-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin: 0 2px;
+            border: 1px solid rgba(0,0,0,0.2);
+        }
+        .shared-badge {
+            border: 2px dashed #333 !important;
+            font-style: italic;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #e4e4e4;
+            font-size: 13px;
+        }
+        th {
+            background: #1a9c09;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .matrix {
+            display: inline-grid;
+            gap: 5px;
+            margin: 10px 20px;
+        }
+        .matrix-2x2 {
+            grid-template-columns: repeat(2, 60px);
+        }
+        .matrix-cell {
+            width: 60px;
+            height: 60px;
+            border: 2px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+        .matrix-a-cell {
+            background: #ffcdd2;
+            border-color: #ffcdd2;
+        }
+        .matrix-b-cell {
+            background: #bbdefb;
+            border-color: #bbdefb;
+        }
+        .matrix-c-cell {
+            background: #c8e6c9;
+            border-color: #66bb6a;
+        }
+        .matrices-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .matrix-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+        .matrix-label-a { color: #ffcdd2; }
+        .matrix-label-b { color: #bbdefb; }
+        .matrix-label-c { color: #c8e6c9; }
+        .highlight {
+            box-shadow: 0 0 0 3px #24a413;
+            animation: pulse 1s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 3px #24a413; }
+            50% { box-shadow: 0 0 0 6px #24a413; }
+        }
+        .value-a {
+            background: #ffcdd2 !important;
+            border-color: #ef5350 !important;
+        }
+        .value-b {
+            background: #bbdefb !important;
+            border-color: #42a5f5 !important;
+        }
+        .pipeline-note {
+            background: #fff3cd;
+            border-left: 4px solid #fff9c4;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .code-snippet {
+            background: #f8f9fa;
+            padding: 8px;
+            margin: 8px 0;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            color: #2d3436;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2> Warp Shuffle for 2×2 Matrix Multiplication</h2>
+        
+        <div class="setup-diagram">
+            <div>
+                <h4 style="text-align: center; margin-bottom: 15px;">Thread Layout (Warp)</h4>
+                <div class="thread-grid">
+                    <div class="thread-box thread-0-0">
+                        T(0,0)<br>row=0, col=0
+                        <div class="lane-info">Lane 0</div>
+                    </div>
+                    <div class="thread-box thread-0-1">
+                        T(0,1)<br>row=0, col=1
+                        <div class="lane-info">Lane 1</div>
+                    </div>
+                    <div class="thread-box thread-1-0">
+                        T(1,0)<br>row=1, col=0
+                        <div class="lane-info">Lane 2</div>
+                    </div>
+                    <div class="thread-box thread-1-1">
+                        T(1,1)<br>row=1, col=1
+                        <div class="lane-info">Lane 3</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="prevBtn" onclick="previousIteration()">← Previous Iteration</button>
+            <span class="iteration-info">Iteration k = <span id="iterationNum">0</span></span>
+            <button id="nextBtn" onclick="nextIteration()">Next Iteration →</button>
+        </div>
+
+        <div class="matrices-display" id="matricesDisplay">
+            <div>
+                <div class="matrix-label matrix-label-a">Matrix A (2×2)</div>
+                <div class="matrix matrix-2x2" id="matrixA"></div>
+            </div>
+            <div style="font-size: 30px; margin: 0 20px;">×</div>
+            <div>
+                <div class="matrix-label matrix-label-b">Matrix B (2×2)</div>
+                <div class="matrix matrix-2x2" id="matrixB"></div>
+            </div>
+            <div style="font-size: 30px; margin: 0 20px;">=</div>
+            <div>
+                <div class="matrix-label matrix-label-c">Matrix C (Accumulated)</div>
+                <div class="matrix matrix-2x2" id="matrixC"></div>
+            </div>
+        </div>
+
+        <h3 style="text-align: center; color: #1a9c09; margin: 30px 0 20px 0;">Complete Pipeline for Iteration k=<span id="iterationNumPipeline">0</span></h3>
+        
+    
+        
+        <div class="pipeline-container" id="pipelineContent"></div>
+
+        <div style="margin-top: 30px; padding: 20px; background: #ffffff; border-radius: 8px;">
+            <h4 style="color: #1a9c09; margin-top: 0;">Step Summary</h4>
+            <table id="summaryTable">
+                <thead>
+                    <tr>
+                        <th>Thread (Lane)</th>
+                        <th>After Load</th>
+                        <th>After A Broadcast</th>
+                        <th>After B Broadcast</th>
+                        <th>Computation</th>
+                        <th>C Accumulation</th>
+                    </tr>
+                </thead>
+                <tbody id="summaryTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const A = [[1, 2], [3, 4]];
+        const B = [[5, 6], [7, 8]];
+        let C = [[0, 0], [0, 0]];
+        
+        let currentIteration = 0;
+        const maxIterations = 2;
+        
+        const threadColors = ['thread-0-0', 'thread-0-1', 'thread-1-0', 'thread-1-1'];
+        const threadLabelColors = ['thread-label-0-0', 'thread-label-0-1', 'thread-label-1-0', 'thread-label-1-1'];
+        
+        function getThreadClass(row, col) {
+            return threadColors[row * 2 + col];
+        }
+        
+        function getThreadLabelClass(row, col) {
+            return threadLabelColors[row * 2 + col];
+        }
+        
+        function createPhaseCard(title, steps, code) {
+            return `
+                <div class="phase-card">
+                    <div class="phase-title">${title}</div>
+                    ${code ? `<div class="code-snippet">${code}</div>` : ''}
+                    ${steps.map(step => step).join('')}
+                </div>
+            `;
+        }
+
+        function updateDisplay() {
+            const k = currentIteration;
+            document.getElementById('iterationNum').textContent = k;
+            document.getElementById('iterationNumPipeline').textContent = k;
+            
+      
+
+             const loadSteps = [
+                `<div class="phase-step }"><span >T(0,0) [Lane 0]:</span> col=${k}→ a=<span class="value-badge value-a">${A[0][k]}</span>, b=<span class="value-badge value-b">${B[k][0]}</span></div>`,
+                `<div class="phase-step }"><span }">T(0,1) [Lane 1]:</span> col=${k}→ a=<span class="value-badge">NA</span>, b=<span class="value-badge value-b">${B[k][1]}</span></div>`,
+                `<div class="phase-step }"><span }">T(1,0) [Lane 2]:</span> col=${k}→ a=<span class="value-badge value-a">${A[1][k]}</span>, b=<span class="value-badge">NA</span></div>`,
+                `<div class="phase-step }"><span }">T(1,1) [Lane 3]:</span> col=${k}→ a=<span class="value-badge">NA</span>, b=<span class="value-badge">NA</span></div>`
+            ];
+            
+            // Phase 2: Broadcast A
+            const broadcastASteps = [
+                `<div class="phase-step }">T(0,0):</span> a=<span class="value-badge value-a">${A[0][k]}</span> (own)</div>`,
+                `<div class="phase-step }">T(0,1):</span> a=<span class="value-badge value-a shared-badge">${A[0][k]}</span> (from Lane 0)</div>`,
+                `<div class="phase-step }">T(1,0):</span> a=<span class="value-badge value-a">${A[1][k]}</span> (own)</div>`,
+                `<div class="phase-step }">T(1,1):</span> a=<span class="value-badge value-a shared-badge">${A[1][k]}</span> (from Lane 2)</div>`
+            ];
+            
+            // Phase 3: Broadcast B
+            const broadcastBSteps = [
+                `<div class="phase-step }">T(0,0):</span> b=<span class="value-badge value-b">${B[k][0]}</span> (own)</div>`,
+                `<div class="phase-step }">T(0,1):</span> b=<span class="value-badge value-b">${B[k][1]}</span> (own)</div>`,
+                `<div class="phase-step }">T(1,0):</span> b=<span class="value-badge value-b shared-badge">${B[k][0]}</span> (from Lane 0)</div>`,
+                `<div class="phase-step }">T(1,1):</span> b=<span class="value-badge value-b shared-badge">${B[k][1]}</span> (from Lane 1)</div>`
+            ];
+            
+            // Phase 4: Compute
+            const computeSteps = [
+                `<div class="phase-step }">T(0,0):</span> ${A[0][k]}×${B[k][0]}=<span class="value-badge ${getThreadClass(0, 0)}">${A[0][k]*B[k][0]}</span></div>`,
+                `<div class="phase-step }">T(0,1):</span> ${A[0][k]}×${B[k][1]}=<span class="value-badge ${getThreadClass(0, 1)}">${A[0][k]*B[k][1]}</span></div>`,
+                `<div class="phase-step }">T(1,0):</span> ${A[1][k]}×${B[k][0]}=<span class="value-badge ${getThreadClass(1, 0)}">${A[1][k]*B[k][0]}</span></div>`,
+                `<div class="phase-step }">T(1,1):</span> ${A[1][k]}×${B[k][1]}=<span class="value-badge ${getThreadClass(1, 1)}">${A[1][k]*B[k][1]}</span></div>`
+            ];
+            
+            // Create pipeline
+            const pipeline = [
+                createPhaseCard('1️⃣ Load', loadSteps, `if (col == ${k})<br>  a = A[row][${k}]<br>  b = B[${k}][col]`),
+                createPhaseCard('2️⃣ Broadcast A<br><small>(row-wise)</small>', broadcastASteps, `a = __shfl_sync(<br>  0xF, a, row*2)`),
+                createPhaseCard('3️⃣ Broadcast B<br><small>(col-wise)</small>', broadcastBSteps, `b = __shfl_sync(<br>  0xF, b, col)`),
+                createPhaseCard('4️⃣ Compute', computeSteps, `c_accum += a * b`)
+            ];
+            
+            document.getElementById('pipelineContent').innerHTML = pipeline.join('');
+            
+            // Update summary table
+            const threads = [
+                {name: 'T(0,0)', lane: 0, row: 0, col: 0},
+                {name: 'T(0,1)', lane: 1, row: 0, col: 1},
+                {name: 'T(1,0)', lane: 2, row: 1, col: 0},
+                {name: 'T(1,1)', lane: 3, row: 1, col: 1}
+            ];
+            
+            let tableHTML = '';
+            threads.forEach(thread => {
+                const {name, lane, row, col} = thread;
+                const loadA = (col === k) ? A[row][k] : 'NA';
+                const loadB = (col === k) ? B[k][col] : 'NA';
+                const afterBcastA = A[row][k];
+                const afterBcastB = B[k][col];
+                const computation = `${afterBcastA} × ${afterBcastB}`;
+                const result = afterBcastA * afterBcastB;
+                const prevC = C[row][col];
+                const newC = prevC + result;
+                
+              
+                
+                tableHTML += `
+                    <tr >
+                        <td><strong>${name}</strong> (Lane ${lane})</td>
+                        <td>a=${loadA}, b=${loadB}</td>
+                        <td>a=${afterBcastA}</td>
+                        <td>a=${afterBcastA}, b=${afterBcastB}</td>
+                        <td>${computation} = ${result}</td>
+                        <td>C[${row}][${col}] = ${prevC} + ${result} = <strong>${newC}</strong></td>
+                    </tr>
+                `;
+            });
+            document.getElementById('summaryTableBody').innerHTML = tableHTML;
+            
+            updateMatrices();
+            updateButtons();
+        }
+
+        function updateMatrices() {
+            const k = currentIteration;
+            
+            // Update A with highlighting and color
+            let htmlA = '';
+            for (let i = 0; i < 2; i++) {
+                for (let j = 0; j < 2; j++) {
+                    const highlight = j === k ? 'highlight' : '';
+                    htmlA += `<div class="matrix-cell matrix-a-cell ${highlight}">${A[i][j]}</div>`;
+                }
+            }
+            document.getElementById('matrixA').innerHTML = htmlA;
+            
+            // Update B with highlighting and color
+            let htmlB = '';
+            for (let i = 0; i < 2; i++) {
+                for (let j = 0; j < 2; j++) {
+                    const highlight = i === k ? 'highlight' : '';
+                    htmlB += `<div class="matrix-cell matrix-b-cell ${highlight}">${B[i][j]}</div>`;
+                }
+            }
+            document.getElementById('matrixB').innerHTML = htmlB;
+            
+            // Update C with proper accumulation and color
+            let htmlC = '';
+            for (let i = 0; i < 2; i++) {
+                for (let j = 0; j < 2; j++) {
+                    htmlC += `<div class="matrix-cell matrix-c-cell">${C[i][j]}</div>`;
+                }
+            }
+            document.getElementById('matrixC').innerHTML = htmlC;
+        }
+
+        function updateButtons() {
+            document.getElementById('prevBtn').disabled = currentIteration === 0;
+            document.getElementById('nextBtn').disabled = currentIteration === maxIterations - 1;
+        }
+
+        function nextIteration() {
+            if (currentIteration < maxIterations - 1) {
+                // Accumulate current iteration results into C
+                for (let i = 0; i < 2; i++) {
+                    for (let j = 0; j < 2; j++) {
+                        C[i][j] += A[i][currentIteration] * B[currentIteration][j];
+                    }
+                }
+                currentIteration++;
+                updateDisplay();
+            }
+        }
+
+        function previousIteration() {
+            if (currentIteration > 0) {
+                currentIteration--;
+                // Recalculate C from scratch
+                C = [[0, 0], [0, 0]];
+                for (let k = 0; k <= currentIteration; k++) {
+                    for (let i = 0; i < 2; i++) {
+                        for (let j = 0; j < 2; j++) {
+                            C[i][j] += A[i][k] * B[k][j];
+                        }
+                    }
+                }
+                updateDisplay();
+            }
+        }
+
+        // Initialize
+        updateDisplay();
+    </script>
+</body>
+</html>
