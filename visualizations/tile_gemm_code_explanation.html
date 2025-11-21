@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete CUDA Tiled GEMM - Annotated</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f5f0;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(0,0,0,0.02) 31px, rgba(0,0,0,0.02) 32px);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1700px;
+            margin: 0 auto;
+            background: #fafaf8;
+            border-radius: 4px;
+            box-shadow: 
+                0 2px 4px rgba(0,0,0,0.1),
+                0 8px 16px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border: 2px solid #2a2a2a;
+        }
+
+        .header {
+            background: #2a2a2a;
+            color: #4ade80;
+            padding: 35px 40px;
+            text-align: center;
+            border-bottom: 3px solid #4ade80;
+        }
+
+        .header h1 {
+            font-family: 'Kalam', cursive;
+            font-size: 38px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0px rgba(74, 222, 128, 0.2);
+        }
+
+        .header p {
+            font-family: 'Kalam', cursive;
+            font-size: 18px;
+            color: #d4d4d4;
+            font-weight: 400;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 0;
+        }
+
+        .code-section {
+            background: #1e1e1e;
+            padding: 45px;
+            position: relative;
+            border-right: 3px solid #333;
+            max-height: 1200px;
+            overflow-y: auto;
+        }
+
+        .code-section::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .code-section::-webkit-scrollbar-track {
+            background: #2a2a2a;
+        }
+
+        .code-section::-webkit-scrollbar-thumb {
+            background: #4ade80;
+            border-radius: 5px;
+        }
+
+        .code-block {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 15px;
+            line-height: 1.8;
+            color: #d4d4d4;
+        }
+
+        .code-section-title {
+            font-family: 'Kalam', cursive;
+            color: #4ade80;
+            font-size: 18px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px dashed #4ade80;
+        }
+
+        .code-line {
+            position: relative;
+            padding: 3px 0;
+            transition: all 0.2s ease;
+        }
+
+        .keyword {
+            color: #c586c0;
+            font-weight: 600;
+        }
+
+        .function {
+            color: #dcdcaa;
+        }
+
+        .number {
+            color: #b5cea8;
+        }
+
+        .comment {
+            color: #6a9955;
+            font-style: italic;
+        }
+
+        .variable {
+            color: #9cdcfe;
+        }
+
+        .operator {
+            color: #d4d4d4;
+        }
+
+        .type {
+            color: #4ec9b0;
+        }
+
+        .annotations-section {
+            background: #fafaf8;
+            padding: 45px 40px 45px 50px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            position: relative;
+            max-height: 1200px;
+            overflow-y: auto;
+        }
+
+        .annotations-section::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .annotations-section::-webkit-scrollbar-track {
+            background: #e5e5e0;
+        }
+
+        .annotations-section::-webkit-scrollbar-thumb {
+            background: #4ade80;
+            border-radius: 5px;
+        }
+
+        .annotation {
+            display: flex;
+            gap: 18px;
+            align-items: start;
+            padding: 20px 24px;
+            background: #fff;
+            border-radius: 3px;
+            box-shadow: 
+                2px 2px 0px rgba(0,0,0,0.08),
+                0 4px 8px rgba(0,0,0,0.04);
+            border: 2px solid #2a2a2a;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .annotation::before {
+            content: '';
+            position: absolute;
+            left: -42px;
+            top: 50%;
+            width: 42px;
+            height: 2px;
+            background: #4ade80;
+            transform: translateY(-50%);
+        }
+
+        .annotation::after {
+            content: '';
+            position: absolute;
+            left: -46px;
+            top: 50%;
+            width: 10px;
+            height: 10px;
+            background: #4ade80;
+            border-radius: 50%;
+            transform: translateY(-50%);
+            border: 2px solid #2a2a2a;
+        }
+
+        .annotation:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                3px 3px 0px rgba(74, 222, 128, 0.3),
+                0 6px 16px rgba(0,0,0,0.1);
+            border-color: #4ade80;
+        }
+
+        .annotation-number {
+            background: #4ade80;
+            color: #0a0a0a;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 20px;
+            font-family: 'Kalam', cursive;
+            flex-shrink: 0;
+            border: 3px solid #2a2a2a;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.15);
+        }
+
+        .annotation-content {
+            flex: 1;
+        }
+
+        .annotation-title {
+            font-family: 'Kalam', cursive;
+            font-weight: 700;
+            color: #2a2a2a;
+            font-size: 20px;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .annotation-description {
+            font-family: 'Inter', sans-serif;
+            color: #3a3a3a;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .highlight-box {
+            background: rgba(74, 222, 128, 0.08);
+            border-left: 4px solid #4ade80;
+            padding-left: 12px;
+            margin: 2px 0;
+            position: relative;
+        }
+
+        .step-badge {
+            display: inline-block;
+            background: #4ade80;
+            color: #0a0a0a;
+            font-weight: 700;
+            font-size: 15px;
+            font-family: 'Kalam', cursive;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-right: 10px;
+            border: 2px solid #2a2a2a;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.15);
+            position: relative;
+            top: -1px;
+        }
+
+        .arrow-connector {
+            display: inline-block;
+            margin-left: 10px;
+            color: #4ade80;
+            font-size: 22px;
+            font-weight: bold;
+            animation: wiggle 2s infinite;
+        }
+
+        @keyframes wiggle {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            25% {
+                transform: translateX(3px);
+            }
+            75% {
+                transform: translateX(-3px);
+            }
+        }
+
+        .code-spacer {
+            height: 15px;
+        }
+
+        @media (max-width: 1200px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .code-section {
+                border-right: none;
+                border-bottom: 3px solid #333;
+                max-height: none;
+            }
+
+            .annotations-section {
+                max-height: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Complete CUDA Tiled Matrix Multiplication (Tiled GEMM)</h1>
+            <p>~ Shared Memory & Thread Synchronization ~</p>
+        </div>
+
+        <div class="content">
+            <div class="code-section">
+                <div class="code-block">
+                    <div class="code-section-title">// Shared Memory Declaration</div>
+                    <div class="code-line highlight-box"><span class="step-badge">1</span><span class="keyword">__shared__</span> <span class="type">float</span> <span class="variable">A_tile</span>[<span class="variable">TILE_SIZE</span>][<span class="variable">TILE_SIZE</span>];<span class="arrow-connector">→</span></div>
+                    <div class="code-line highlight-box"><span class="keyword">__shared__</span> <span class="type">float</span> <span class="variable">B_tile</span>[<span class="variable">TILE_SIZE</span>][<span class="variable">TILE_SIZE</span>];</div>
+                    
+                    <div class="code-spacer"></div>
+                    
+                    <div class="code-section-title">// Thread Index Calculations</div>
+                    <div class="code-line highlight-box"><span class="step-badge">2</span><span class="type">int</span> <span class="variable">tx</span> = <span class="variable">threadIdx</span>.<span class="variable">x</span>;<span class="arrow-connector">→</span></div>
+                    <div class="code-line highlight-box"><span class="type">int</span> <span class="variable">ty</span> = <span class="variable">threadIdx</span>.<span class="variable">y</span>;</div>
+                    
+                    <div class="code-spacer"></div>
+                    
+                    <div class="code-section-title">// Global Output Position</div>
+                    <div class="code-line highlight-box"><span class="step-badge">3</span><span class="type">int</span> <span class="variable">row</span> = <span class="variable">blockIdx</span>.<span class="variable">y</span> * <span class="variable">TILE_SIZE</span> + <span class="variable">ty</span>;<span class="arrow-connector">→</span></div>
+                    <div class="code-line highlight-box"><span class="type">int</span> <span class="variable">col</span> = <span class="variable">blockIdx</span>.<span class="variable">x</span> * <span class="variable">TILE_SIZE</span> + <span class="variable">tx</span>;</div>
+                    
+                    <div class="code-spacer"></div>
+                    
+                    <div class="code-line highlight-box"><span class="step-badge">4</span><span class="type">float</span> <span class="variable">sum</span> = <span class="number">0.0f</span>;<span class="arrow-connector">→</span></div>
+                    
+                    <div class="code-spacer"></div>
+                    
+                    <div class="code-section-title">// Tiling Loop</div>
+                    <div class="code-line highlight-box"><span class="step-badge">5</span><span class="keyword">for</span> (<span class="type">int</span> <span class="variable">tile</span> = <span class="number">0</span>; <span class="variable">tile</span> &lt; (<span class="variable">K</span> + <span class="variable">TILE_SIZE</span> - <span class="number">1</span>) / <span class="variable">TILE_SIZE</span>; <span class="variable">tile</span>++) {<span class="arrow-connector">→</span></div>
+                    <div class="code-line">    <span class="comment">// Load tile from matrix A into shared memory</span></div>
+                    <div class="code-line">    <span class="type">int</span> <span class="variable">A_row</span> = <span class="variable">row</span>;</div>
+                    <div class="code-line">    <span class="type">int</span> <span class="variable">A_col</span> = <span class="variable">tile</span> * <span class="variable">TILE_SIZE</span> + <span class="variable">tx</span>;</div>
+                    <div class="code-line highlight-box"><span class="step-badge">6</span>    <span class="keyword">if</span> (<span class="variable">A_row</span> &lt; <span class="variable">M</span> && <span class="variable">A_col</span> &lt; <span class="variable">K</span>) {<span class="arrow-connector">→</span></div>
+                    <div class="code-line highlight-box"><span class="step-badge">7</span>        <span class="variable">A_tile</span>[<span class="variable">ty</span>][<span class="variable">tx</span>] = <span class="variable">A</span>[<span class="variable">A_row</span> * <span class="variable">K</span> + <span class="variable">A_col</span>];<span class="arrow-connector">→</span></div>
+                    <div class="code-line">    } <span class="keyword">else</span> {</div>
+                    <div class="code-line highlight-box">        <span class="variable">A_tile</span>[<span class="variable">ty</span>][<span class="variable">tx</span>] = <span class="number">0.0f</span>;</div>
+                    <div class="code-line">    }</div>
+                    <div class="code-line">&nbsp;</div>
+                    <div class="code-line">    <span class="comment">// Load tile from matrix B into shared memory</span></div>
+                    <div class="code-line">    <span class="type">int</span> <span class="variable">B_row</span> = <span class="variable">tile</span> * <span class="variable">TILE_SIZE</span> + <span class="variable">ty</span>;</div>
+                    <div class="code-line">    <span class="type">int</span> <span class="variable">B_col</span> = <span class="variable">col</span>;</div>
+                    <div class="code-line">    <span class="keyword">if</span> (<span class="variable">B_row</span> &lt; <span class="variable">K</span> && <span class="variable">B_col</span> &lt; <span class="variable">N</span>) {</div>
+                    <div class="code-line highlight-box"><span class="step-badge">8</span>        <span class="variable">B_tile</span>[<span class="variable">ty</span>][<span class="variable">tx</span>] = <span class="variable">B</span>[<span class="variable">B_row</span> * <span class="variable">N</span> + <span class="variable">B_col</span>];<span class="arrow-connector">→</span></div>
+                    <div class="code-line">    } <span class="keyword">else</span> {</div>
+                    <div class="code-line">        <span class="variable">B_tile</span>[<span class="variable">ty</span>][<span class="variable">tx</span>] = <span class="number">0.0f</span>;</div>
+                    <div class="code-line">    }</div>
+                    <div class="code-line">&nbsp;</div>
+                    <div class="code-line">    <span class="comment">// Synchronize to ensure all threads have loaded their data</span></div>
+                    <div class="code-line highlight-box"><span class="step-badge">9</span>    <span class="function">__syncthreads</span>();<span class="arrow-connector">→</span></div>
+                    <div class="code-line">&nbsp;</div>
+                    <div class="code-line">    <span class="comment">// Compute partial dot product for this tile</span></div>
+                    <div class="code-line highlight-box"><span class="step-badge">10</span>    <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">k</span> = <span class="number">0</span>; <span class="variable">k</span> &lt; <span class="variable">TILE_SIZE</span>; <span class="variable">k</span>++) {<span class="arrow-connector">→</span></div>
+                    <div class="code-line highlight-box">        <span class="variable">sum</span> += <span class="variable">A_tile</span>[<span class="variable">ty</span>][<span class="variable">k</span>] * <span class="variable">B_tile</span>[<span class="variable">k</span>][<span class="variable">tx</span>];</div>
+                    <div class="code-line">    }</div>
+                    <div class="code-line">&nbsp;</div>
+                    <div class="code-line">    <span class="comment">// Synchronize before loading next tile</span></div>
+                    <div class="code-line highlight-box"><span class="step-badge">11</span>    <span class="function">__syncthreads</span>();<span class="arrow-connector">→</span></div>
+                    <div class="code-line">}</div>
+                    
+                    <div class="code-spacer"></div>
+                    
+                    <div class="code-section-title">// Write Result to Global Memory</div>
+                    <div class="code-line"><span class="comment">// Write result to global memory</span></div>
+                    <div class="code-line highlight-box"><span class="step-badge">12</span><span class="keyword">if</span> (<span class="variable">row</span> &lt; <span class="variable">M</span> && <span class="variable">col</span> &lt; <span class="variable">N</span>) {<span class="arrow-connector">→</span></div>
+                    <div class="code-line highlight-box">    <span class="variable">C</span>[<span class="variable">row</span> * <span class="variable">N</span> + <span class="variable">col</span>] = <span class="variable">sum</span>;</div>
+                    <div class="code-line">}</div>
+                </div>
+            </div>
+
+            <div class="annotations-section">
+                <div class="annotation">
+                    <div class="annotation-number">1</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Declare Shared Memory for A & B Tiles</div>
+                        <div class="annotation-description">Allocate shared memory arrays to store tiles from matrices A and B. Shared memory is fast, on-chip memory accessible by all threads in a block.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">2</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Local Thread Row & Col in Block</div>
+                        <div class="annotation-description">Calculate thread's local position (tx, ty) within the thread block. Used for indexing shared memory.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">3</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Global Row & Col of Output Matrix</div>
+                        <div class="annotation-description">Calculate the global position in output matrix C that this thread is responsible for computing. Used for indexing the output matrix.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">4</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Initialize Accumulator</div>
+                        <div class="annotation-description">Initialize sum to accumulate the dot product across all tiles. This will store the final result for position (row, col) in matrix C.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">5</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Loop Over Tiles Along K Dimension</div>
+                        <div class="annotation-description">Iterate through tiles along the K dimension (the shared dimension between matrices A and B). Each iteration processes one tile pair.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">6</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Boundary Check for Matrix A</div>
+                        <div class="annotation-description">Ensure indices remain within valid matrix dimensions, handling cases where matrix sizes aren't evenly divisible by TILE_SIZE.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">7</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Load Tile-A to Shared Memory</div>
+                        <div class="annotation-description">Each thread loads one element from matrix A into shared memory. Out-of-bounds elements are zero-padded to maintain correctness.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">8</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Load Tile-B to Shared Memory</div>
+                        <div class="annotation-description">Each thread loads one element from matrix B into shared memory. Out-of-bounds elements are zero-padded to maintain correctness.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">9</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">First Synchronization Barrier</div>
+                        <div class="annotation-description">All threads in the block must complete loading their respective positions from Global Memory for both Tile-A and Tile-B before any calculations begin. This ensures operations are performed only on fully-loaded tiles.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">10</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Compute Partial Dot Product</div>
+                        <div class="annotation-description">Each thread computes a partial dot product by accumulating the product of corresponding elements from A_tile and B_tile for the current tile iteration.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">11</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Second Synchronization Barrier</div>
+                        <div class="annotation-description">Synchronize before loading the next tile to prevent race conditions—ensures no thread overwrites shared memory while others are still computing with the current tile data.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">12</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Write Result to Global Memory</div>
+                        <div class="annotation-description">After all tiles have been processed, write the accumulated sum to the output matrix C in global memory. Boundary check ensures we don't write outside matrix bounds.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
