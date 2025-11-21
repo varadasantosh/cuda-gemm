@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Naive CUDA GEMM - Annotated</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f5f0;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(0,0,0,0.02) 31px, rgba(0,0,0,0.02) 32px);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1700px;
+            margin: 0 auto;
+            background: #fafaf8;
+            border-radius: 4px;
+            box-shadow: 
+                0 2px 4px rgba(0,0,0,0.1),
+                0 8px 16px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border: 2px solid #2a2a2a;
+        }
+
+        .header {
+            background: #2a2a2a;
+            color: #4ade80;
+            padding: 35px 40px;
+            text-align: center;
+            border-bottom: 3px solid #4ade80;
+        }
+
+        .header h1 {
+            font-family: 'Kalam', cursive;
+            font-size: 38px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0px rgba(74, 222, 128, 0.2);
+        }
+
+        .header p {
+            font-family: 'Kalam', cursive;
+            font-size: 18px;
+            color: #d4d4d4;
+            font-weight: 400;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 0;
+        }
+
+        .code-section {
+            background: #1e1e1e;
+            padding: 45px;
+            position: relative;
+            border-right: 3px solid #333;
+            max-height: 1400px;
+            overflow-y: auto;
+        }
+
+        .code-section::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .code-section::-webkit-scrollbar-track {
+            background: #2a2a2a;
+        }
+
+        .code-section::-webkit-scrollbar-thumb {
+            background: #4ade80;
+            border-radius: 5px;
+        }
+
+        .code-block {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 15px;
+            line-height: 1.8;
+            color: #d4d4d4;
+        }
+
+        .code-section-title {
+            font-family: 'Kalam', cursive;
+            color: #4ade80;
+            font-size: 18px;
+            margin-bottom: 15px;
+            margin-top: 25px;
+            padding-bottom: 8px;
+            border-bottom: 2px dashed #4ade80;
+        }
+
+        .code-section-title:first-child {
+            margin-top: 0;
+        }
+
+        .code-line {
+            position: relative;
+            padding: 3px 0;
+            transition: all 0.2s ease;
+        }
+
+        .keyword {
+            color: #c586c0;
+            font-weight: 600;
+        }
+
+        .function {
+            color: #dcdcaa;
+        }
+
+        .number {
+            color: #b5cea8;
+        }
+
+        .comment {
+            color: #6a9955;
+            font-style: italic;
+        }
+
+        .variable {
+            color: #9cdcfe;
+        }
+
+        .operator {
+            color: #d4d4d4;
+        }
+
+        .type {
+            color: #4ec9b0;
+        }
+
+        .string {
+            color: #ce9178;
+        }
+
+        .annotations-section {
+            background: #fafaf8;
+            padding: 45px 40px 45px 50px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            position: relative;
+            max-height: 1400px;
+            overflow-y: auto;
+        }
+
+        .annotations-section::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .annotations-section::-webkit-scrollbar-track {
+            background: #e5e5e0;
+        }
+
+        .annotations-section::-webkit-scrollbar-thumb {
+            background: #4ade80;
+            border-radius: 5px;
+        }
+
+        .annotation {
+            display: flex;
+            gap: 18px;
+            align-items: start;
+            padding: 20px 24px;
+            background: #fff;
+            border-radius: 3px;
+            box-shadow: 
+                2px 2px 0px rgba(0,0,0,0.08),
+                0 4px 8px rgba(0,0,0,0.04);
+            border: 2px solid #2a2a2a;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .annotation::before {
+            content: '';
+            position: absolute;
+            left: -42px;
+            top: 50%;
+            width: 42px;
+            height: 2px;
+            background: #4ade80;
+            transform: translateY(-50%);
+        }
+
+        .annotation::after {
+            content: '';
+            position: absolute;
+            left: -46px;
+            top: 50%;
+            width: 10px;
+            height: 10px;
+            background: #4ade80;
+            border-radius: 50%;
+            transform: translateY(-50%);
+            border: 2px solid #2a2a2a;
+        }
+
+        .annotation:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                3px 3px 0px rgba(74, 222, 128, 0.3),
+                0 6px 16px rgba(0,0,0,0.1);
+            border-color: #4ade80;
+        }
+
+        .annotation-number {
+            background: #4ade80;
+            color: #0a0a0a;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 20px;
+            font-family: 'Kalam', cursive;
+            flex-shrink: 0;
+            border: 3px solid #2a2a2a;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.15);
+        }
+
+        .annotation-content {
+            flex: 1;
+        }
+
+        .annotation-title {
+            font-family: 'Kalam', cursive;
+            font-weight: 700;
+            color: #2a2a2a;
+            font-size: 20px;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .annotation-description {
+            font-family: 'Inter', sans-serif;
+            color: #3a3a3a;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .highlight-box {
+            background: rgba(74, 222, 128, 0.08);
+            border-left: 4px solid #4ade80;
+            padding-left: 12px;
+            margin: 2px 0;
+            position: relative;
+        }
+
+        .highlight-blue {
+            background: rgba(59, 130, 246, 0.08);
+            border-left: 4px solid #3b82f6;
+            padding-left: 12px;
+            margin: 2px 0;
+        }
+
+        .highlight-yellow {
+            background: rgba(234, 179, 8, 0.08);
+            border-left: 4px solid #eab308;
+            padding-left: 12px;
+            margin: 2px 0;
+        }
+
+        .step-badge {
+            display: inline-block;
+            background: #4ade80;
+            color: #0a0a0a;
+            font-weight: 700;
+            font-size: 15px;
+            font-family: 'Kalam', cursive;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-right: 10px;
+            border: 2px solid #2a2a2a;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.15);
+            position: relative;
+            top: -1px;
+        }
+
+        .arrow-connector {
+            display: inline-block;
+            margin-left: 10px;
+            color: #4ade80;
+            font-size: 22px;
+            font-weight: bold;
+            animation: wiggle 2s infinite;
+        }
+
+        @keyframes wiggle {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            25% {
+                transform: translateX(3px);
+            }
+            75% {
+                transform: translateX(-3px);
+            }
+        }
+
+        .code-spacer {
+            height: 15px;
+        }
+
+        @media (max-width: 1200px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .code-section {
+                border-right: none;
+                border-bottom: 3px solid #333;
+                max-height: none;
+            }
+
+            .annotations-section {
+                max-height: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1> Complete Naive CUDA Matrix Multiplication (GEMM)</h1>
+            <p>~ Simple Global Memory Implementation ~</p>
+        </div>
+
+        <div class="content">
+            <div class="code-section">
+                <div class="code-block">
+                    <div class="code-section-title">// Matrix Dimensions & Memory Size Calculation</div>
+                    <div class="code-line highlight-box"><span class="step-badge">1</span><span class="type">int</span> <span class="variable">M</span> = <span class="number">256</span>, <span class="variable">N</span> = <span class="number">256</span>, <span class="variable">K</span> = <span class="number">256</span>;<span class="arrow-connector">→</span></div>
+                    <div class="code-line highlight-box"><span class="type">size_t</span> <span class="variable">size_A</span> = <span class="variable">M</span> * <span class="variable">K</span> * <span class="keyword">sizeof</span>(<span class="type">float</span>);</div>
+                    <div class="code-line highlight-box"><span class="type">size_t</span> <span class="variable">size_B</span> = <span class="variable">K</span> * <span class="variable">N</span> * <span class="keyword">sizeof</span>(<span class="type">float</span>);</div>
+                    <div class="code-line highlight-box"><span class="type">size_t</span> <span class="variable">size_C</span> = <span class="variable">M</span> * <span class="variable">N</span> * <span class="keyword">sizeof</span>(<span class="type">float</span>);</div>
+                    
+                    <div class="code-spacer"></div>
+                    
+                    <div class="code-section-title">// Host Memory Allocation</div>
+                    <div class="code-line"><span class="comment">// Host matrices</span></div>
+                    <div class="code-line highlight-blue"><span class="step-badge">2</span><span class="type">float</span> *<span class="variable">h_A</span> = (<span class="type">float</span>*)<span class="function">malloc</span>(<span class="variable">size_A</span>);<span class="arrow-connector">→</span></div>
+                    <div class="code-line highlight-blue"><span class="type">float</span> *<span class="variable">h_B</span> = (<span class="type">float</span>*)<span class="function">malloc</span>(<span class="variable">size_B</span>);</div>
+                    
+                    <div class="code-spacer"></div>
+                    
+                    <div class="code-section-title">// Device Memory Allocation</div>
+                    <div class="code-line"><span class="comment">// Device matrices</span></div>
+                    <div class="code-line highlight-box"><span class="step-badge">3</span><span class="type">float</span> *<span class="variable">d_A</span>, *<span class="variable">d_B</span>, *<span class="variable">d_C</span>;<span class="arrow-connector">→</span></div>
+                    <div class="code-line highlight-box"><span class="function">cudaMalloc</span>(&<span class="variable">d_A</span>, <span class="variable">size_A</span>);</div>
+                    <div class="code-line highlight-box"><span class="function">cudaMalloc</span>(&<span class="variable">d_B</span>, <span class="variable">size_B</span>);</div>
+                    <div class="code-line highlight-box"><span class="function">cudaMalloc</span>(&<span class="variable">d_C</span>, <span class="variable">size_C</span>);</div>
+                    
+                    <div class="code-spacer"></div>
+                    
+                    <div class="code-section-title">// Initialize Matrices & Copy to Device</div>
+                    <div class="code-line highlight-yellow"><span class="step-badge">4</span><span class="function">generateRandomMatrix</span>(<span class="variable">h_A</span>, <span class="variable">M</span>, <span class="variable">K</span>, <span class="number">1.0f</span>, <span class="number">10.0f</span>);<span class="arrow-connector">→</span></div>
+                    <div class="code-line highlight-yellow"><span class="function">generateRandomMatrix</span>(<span class="variable">h_B</span>, <span class="variable">K</span>, <span class="variable">N</span>, <span class="number">1.0f</span>, <span class="number">10.0f</span>);</div>
+                    <div class="code-line">&nbsp;</div>
+                    <div class="code-line"><span class="comment">// Copy to device</span></div>
+                    <div class="code-line highlight-yellow"><span class="function">printf</span>(<span class="string">"Copying matrices to GPU...\\n"</span>);</div>
+                    <div class="code-line highlight-yellow"><span class="function">cudaMemcpy</span>(<span class="variable">d_A</span>, <span class="variable">h_A</span>, <span class="variable">size_A</span>, <span class="variable">cudaMemcpyHostToDevice</span>);</div>
+                    <div class="code-line highlight-yellow"><span class="function">cudaMemcpy</span>(<span class="variable">d_B</span>, <span class="variable">h_B</span>, <span class="variable">size_B</span>, <span class="variable">cudaMemcpyHostToDevice</span>);</div>
+                    
+                    <div class="code-spacer"></div>
+                    
+                    <div class="code-section-title">// Grid & Block Configuration</div>
+                    <div class="code-line highlight-box"><span class="step-badge">5</span><span class="type">dim3</span> <span class="variable">block</span>(<span class="number">32</span>, <span class="number">32</span>);<span class="arrow-connector">→</span></div>
+                    <div class="code-line highlight-box"><span class="type">dim3</span> <span class="variable">grid</span>((<span class="variable">N</span> + <span class="variable">block</span>.<span class="variable">x</span> - <span class="number">1</span>) / <span class="variable">block</span>.<span class="variable">x</span>, (<span class="variable">M</span> + <span class="variable">block</span>.<span class="variable">y</span> - <span class="number">1</span>) / <span class="variable">block</span>.<span class="variable">y</span>);</div>
+                    
+                    <div class="code-spacer"></div>
+                    
+                    <div class="code-section-title">// Timing & Kernel Launch</div>
+                    <div class="code-line"><span class="comment">// Create timing events</span></div>
+                    <div class="code-line highlight-box"><span class="step-badge">6</span><span class="type">cudaEvent_t</span> <span class="variable">start</span>, <span class="variable">stop</span>;<span class="arrow-connector">→</span></div>
+                    <div class="code-line highlight-box"><span class="function">cudaEventCreate</span>(&<span class="variable">start</span>);</div>
+                    <div class="code-line highlight-box"><span class="function">cudaEventCreate</span>(&<span class="variable">stop</span>);</div>
+                    <div class="code-line">&nbsp;</div>
+                    <div class="code-line"><span class="comment">// Warm-up phase</span></div>
+                    <div class="code-line highlight-box"><span class="step-badge">7</span><span class="function">gemm_kernel</span>&lt;&lt;&lt;<span class="variable">grid</span>, <span class="variable">block</span>&gt;&gt;&gt;(<span class="variable">d_A</span>, <span class="variable">d_B</span>, <span class="variable">d_C</span>, <span class="variable">M</span>, <span class="variable">N</span>, <span class="variable">K</span>);<span class="arrow-connector">→</span></div>
+                    <div class="code-line highlight-box"><span class="function">cudaDeviceSynchronize</span>();</div>
+                    <div class="code-line">&nbsp;</div>
+                    <div class="code-line"><span class="comment">// Timed execution</span></div>
+                    <div class="code-line highlight-box"><span class="step-badge">8</span><span class="function">printf</span>(<span class="string">"Running GEMM kernel...\\n"</span>);<span class="arrow-connector">→</span></div>
+                    <div class="code-line highlight-box"><span class="function">cudaEventRecord</span>(<span class="variable">start</span>);</div>
+                    <div class="code-line highlight-box"><span class="function">gemm_kernel</span>&lt;&lt;&lt;<span class="variable">grid</span>, <span class="variable">block</span>&gt;&gt;&gt;(<span class="variable">d_A</span>, <span class="variable">d_B</span>, <span class="variable">d_C</span>, <span class="variable">M</span>, <span class="variable">N</span>, <span class="variable">K</span>);</div>
+                    <div class="code-line highlight-box"><span class="function">cudaEventRecord</span>(<span class="variable">stop</span>);</div>
+                    <div class="code-line highlight-box"><span class="function">cudaEventSynchronize</span>(<span class="variable">stop</span>);</div>
+                    
+                    <div class="code-spacer"></div>
+                    
+                    <div class="code-section-title">// Naive GEMM Kernel Implementation</div>
+                    <div class="code-line highlight-box"><span class="step-badge">9</span><span class="keyword">__global__</span> <span class="type">void</span> <span class="function">gemm_kernel</span>(<span class="type">float</span>* <span class="variable">A</span>, <span class="type">float</span>* <span class="variable">B</span>, <span class="type">float</span>* <span class="variable">C</span>, <span class="type">int</span> <span class="variable">M</span>, <span class="type">int</span> <span class="variable">N</span>, <span class="type">int</span> <span class="variable">K</span>) {<span class="arrow-connector">→</span></div>
+                    <div class="code-line">&nbsp;</div>
+                    <div class="code-line highlight-box"><span class="step-badge">10</span>    <span class="type">int</span> <span class="variable">row</span> = <span class="variable">blockIdx</span>.<span class="variable">y</span> * <span class="variable">blockDim</span>.<span class="variable">y</span> + <span class="variable">threadIdx</span>.<span class="variable">y</span>;<span class="arrow-connector">→</span></div>
+                    <div class="code-line highlight-box">    <span class="type">int</span> <span class="variable">col</span> = <span class="variable">blockIdx</span>.<span class="variable">x</span> * <span class="variable">blockDim</span>.<span class="variable">x</span> + <span class="variable">threadIdx</span>.<span class="variable">x</span>;</div>
+                    <div class="code-line">&nbsp;</div>
+                    <div class="code-line highlight-box"><span class="step-badge">11</span>    <span class="keyword">if</span> (<span class="variable">row</span> &lt; <span class="variable">M</span> && <span class="variable">col</span> &lt; <span class="variable">N</span>) {<span class="arrow-connector">→</span></div>
+                    <div class="code-line highlight-box"><span class="step-badge">12</span>        <span class="type">float</span> <span class="variable">sum</span> = <span class="number">0.0f</span>;<span class="arrow-connector">→</span></div>
+                    <div class="code-line highlight-box"><span class="step-badge">13</span>        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">k</span> = <span class="number">0</span>; <span class="variable">k</span> &lt; <span class="variable">K</span>; <span class="variable">k</span>++) {<span class="arrow-connector">→</span></div>
+                    <div class="code-line highlight-box">            <span class="variable">sum</span> += <span class="variable">A</span>[<span class="variable">row</span> * <span class="variable">K</span> + <span class="variable">k</span>] * <span class="variable">B</span>[<span class="variable">k</span> * <span class="variable">N</span> + <span class="variable">col</span>];</div>
+                    <div class="code-line">        }</div>
+                    <div class="code-line highlight-box"><span class="step-badge">14</span>        <span class="variable">C</span>[<span class="variable">row</span> * <span class="variable">N</span> + <span class="variable">col</span>] = <span class="variable">sum</span>;<span class="arrow-connector">→</span></div>
+                    <div class="code-line">    }</div>
+                    <div class="code-line">}</div>
+                </div>
+            </div>
+
+            <div class="annotations-section">
+                <div class="annotation">
+                    <div class="annotation-number">1</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Calculate Memory Required for Matrices</div>
+                        <div class="annotation-description">Define matrix dimensions (M=256, N=256, K=256) and calculate the total memory in bytes needed for matrices A (M×K), B (K×N), and C (M×N) using sizeof(float).</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">2</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Allocate Memory on CPU (Host)</div>
+                        <div class="annotation-description">Allocate memory on the CPU (host) for input matrices A and B using malloc(). These will store the initial data before copying to GPU.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">3</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Allocate Memory on GPU (Device)</div>
+                        <div class="annotation-description">Allocate memory on the GPU (device) for matrices A, B, and C using cudaMalloc(). This is where the actual computation will take place.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">4</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Generate Random Matrices & Copy to GPU</div>
+                        <div class="annotation-description">Initialize matrices A and B with random values (range 1.0 to 10.0) on the host, then copy them to device memory using cudaMemcpy with cudaMemcpyHostToDevice flag.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">5</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Define Grid & Block Dimensions</div>
+                        <div class="annotation-description">Configure thread block size (32×32 threads) and grid size (8×8 blocks). Grid dimensions are calculated as ⌈N/32⌉ × ⌈M/32⌉ to cover the entire output matrix.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">6</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Create Events to Calculate Time</div>
+                        <div class="annotation-description">Create CUDA events (start and stop) to measure kernel execution time accurately. Events provide precise GPU timing.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">7</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Warm-up Phase</div>
+                        <div class="annotation-description">Launch kernel once and wait for completion using cudaDeviceSynchronize(). This warm-up run initializes the GPU and prepares it for accurate timing measurements.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">8</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Launch Kernel & Record Times</div>
+                        <div class="annotation-description">Record start time, launch the GEMM kernel, record stop time, and synchronize. This captures the actual kernel execution time excluding overhead.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">9</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Naive GEMM Kernel Declaration</div>
+                        <div class="annotation-description">Define the kernel function with __global__ qualifier. Takes pointers to matrices A, B, C and dimensions M, N, K as parameters.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">10</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Calculate Row & Column for Each Thread</div>
+                        <div class="annotation-description">Each thread calculates its global row and column position in the output matrix C by combining block indices, block dimensions, and thread indices.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">11</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Boundary Check</div>
+                        <div class="annotation-description">Verify that the thread's position is within valid matrix bounds to prevent out-of-bounds memory access when matrix dimensions aren't perfectly divisible by block size.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">12</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Initialize Accumulator</div>
+                        <div class="annotation-description">Initialize sum to 0.0f to accumulate the dot product result for the element C[row][col].</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">13</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Compute: C[i][j] = Σ(A[i][k] × B[k][j])</div>
+                        <div class="annotation-description">Loop over the K dimension, computing the dot product. Each iteration multiplies corresponding elements from row i of A and column j of B, accumulating the result.</div>
+                    </div>
+                </div>
+
+                <div class="annotation">
+                    <div class="annotation-number">14</div>
+                    <div class="annotation-content">
+                        <div class="annotation-title">Update Output Matrix Element</div>
+                        <div class="annotation-description">Write the computed sum to the output matrix C at position [row][col]. This stores the final result: C[i][j] = result of dot product.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
