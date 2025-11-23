@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coalesced: Thread Layout</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Permanent+Marker&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Kalam', cursive;
+            background: #f5f5dc;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #fefef8;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 40px;
+            border: 2px solid #2a2a2a;
+        }
+
+        .header {
+            background: #6b9b6e;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 28px;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .header .subtitle {
+            font-size: 18px;
+            color: #fff;
+            opacity: 0.9;
+        }
+
+        .block-visual {
+            background: #3a4a5a;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 25px 0;
+        }
+
+        .block-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 22px;
+            color: #6b9b6e;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .thread-row {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .thread-cell {
+            width: 32px;
+            height: 32px;
+            border: 2px solid #2a2a2a;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+            background: #6b9b6e;
+        }
+
+        .warp-info {
+            background: #5b9dd9;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+        }
+
+        .warp-info-text {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 20px;
+            color: white;
+            line-height: 1.6;
+        }
+
+        .benefit-box {
+            background: #e8f5e9;
+            border: 3px solid #6b9b6e;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .benefit-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 20px;
+            color: #2d5a2f;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .benefit-text {
+            font-size: 16px;
+            color: #3a3a3a;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .memory-visual {
+            background: white;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+
+        .memory-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 20px;
+            color: #2a2a2a;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .memory-indices {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .memory-cell {
+            width: 32px;
+            height: 32px;
+            border: 2px solid #2a2a2a;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: white;
+            background: #6b9b6e;
+        }
+
+        .comparison-box {
+            background: #fff3cd;
+            border: 3px solid #f0ad4e;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+
+        .comparison-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 20px;
+            color: #856404;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .comparison-item {
+            background: white;
+            border: 2px solid #2a2a2a;
+            border-radius: 6px;
+            padding: 15px;
+        }
+
+        .comparison-label {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 16px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .bad-label {
+            color: #e85d5d;
+        }
+
+        .good-label {
+            color: #6b9b6e;
+        }
+
+        .comparison-text {
+            font-size: 14px;
+            color: #3a3a3a;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Thread Layout Within Block(0,0)</h1>
+            <div class="subtitle">Single Block with 32 Threads</div>
+        </div>
+
+        <div class="block-visual">
+            <div class="block-title">32 Threads in Single Block</div>
+            
+            <div class="thread-row" id="threadRow"></div>
+        </div>
+
+        <div class="warp-info">
+            <div class="warp-info-text">
+                All 32 threads form 1 complete warp that processes<br>
+                consecutive matrix elements 0-31
+            </div>
+        </div>
+
+        <div class="benefit-box">
+            <div class="benefit-title">✓ Perfect Memory Access Pattern</div>
+            <div class="benefit-text">
+                <strong>All threads in the same row</strong> means they access <strong>consecutive memory locations</strong>.
+                Thread (0,0) accesses element 0, thread (1,0) accesses element 1, ..., thread (31,0) accesses element 31.
+                The GPU can coalesce these into a single memory transaction!
+            </div>
+        </div>
+
+        <div class="memory-visual">
+            <div class="memory-title">Memory Access Pattern (Block 0,0 → Matrix Row 0)</div>
+            
+            <div style="text-align: center; margin-bottom: 15px; font-size: 16px; color: #555;">
+                <strong>Consecutive Memory Indices:</strong>
+            </div>
+            
+            <div class="memory-indices" id="memoryIndices"></div>
+
+            <div style="margin-top: 20px; text-align: center; font-size: 16px; color: #6b9b6e; font-weight: 700;">
+                ✓ No gaps! All accesses are consecutive.
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Generate 32 threads (0,0) to (31,0)
+        const threadRow = document.getElementById('threadRow');
+        for (let i = 0; i < 32; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'thread-cell';
+            cell.textContent = `${i},0`;
+            threadRow.appendChild(cell);
+        }
+
+        // Generate memory indices 0-31
+        const memoryIndices = document.getElementById('memoryIndices');
+        for (let i = 0; i < 32; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'memory-cell';
+            cell.textContent = i;
+            memoryIndices.appendChild(cell);
+        }
+    </script>
+</body>
+</html>

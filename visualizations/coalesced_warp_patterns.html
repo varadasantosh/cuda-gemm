@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coalesced: Warp Access Patterns</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Permanent+Marker&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Kalam', cursive;
+            background: #f5f5dc;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #fefef8;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 40px;
+            border: 2px solid #2a2a2a;
+        }
+
+        .header {
+            background: #6b9b6e;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 28px;
+            color: white;
+        }
+
+        .block-example {
+            background: white;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+
+        .example-header {
+            background: #6b9b6e;
+            border: 2px solid #2a2a2a;
+            border-radius: 6px;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+        }
+
+        .example-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 22px;
+            color: white;
+            text-align: center;
+        }
+
+        .warp-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 6px;
+            border-left: 5px solid #6b9b6e;
+        }
+
+        .section-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 18px;
+            color: #2a2a2a;
+            margin-bottom: 12px;
+        }
+
+        .calculation-box {
+            background: #e8f4f8;
+            border: 2px solid #5b9dd9;
+            border-radius: 6px;
+            padding: 12px 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .calc-line {
+            color: #3a3a3a;
+        }
+
+        .calc-highlight {
+            background: #c8e6c9;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: 700;
+        }
+
+        .memory-indices {
+            margin-top: 12px;
+        }
+
+        .indices-label {
+            font-weight: 700;
+            font-size: 15px;
+            color: #2a2a2a;
+            margin-bottom: 8px;
+        }
+
+        .indices-grid {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+        }
+
+        .index-cell {
+            width: 32px;
+            height: 32px;
+            border: 2px solid #2a2a2a;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: white;
+            background: #6b9b6e;
+        }
+
+        .block-1-cell { background: #5b9dd9; }
+        .block-2-cell { background: #c86bff; }
+
+        .coalesced-visual {
+            background: #d4edda;
+            border: 3px solid #6b9b6e;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .coalesced-text {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 20px;
+            color: #155724;
+        }
+
+        .coalesced-detail {
+            font-size: 15px;
+            color: #3a3a3a;
+            margin-top: 8px;
+        }
+
+        .benefit-summary {
+            background: #e8f5e9;
+            border: 3px solid #6b9b6e;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+
+        .summary-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 20px;
+            color: #2d5a2f;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .summary-points {
+            list-style: none;
+            padding: 0;
+        }
+
+        .summary-points li {
+            font-size: 16px;
+            color: #3a3a3a;
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .summary-points li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #6b9b6e;
+            font-weight: 700;
+            font-size: 20px;
+        }
+
+        .performance-box {
+            background: #fff9c4;
+            border: 3px solid #ffd06b;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+
+        .performance-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 20px;
+            color: #856404;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .performance-text {
+            font-size: 16px;
+            color: #3a3a3a;
+            line-height: 1.6;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1> Coalesced Memory Access Patterns</h1>
+        </div>
+
+        <!-- Block 0,0 Example -->
+        <div class="block-example">
+            <div class="example-header">
+                <div class="example-title">Block(0,0) → Matrix Row 0, Elements 0-31</div>
+            </div>
+
+            <div class="warp-section">
+                <div class="section-title">Warp 0 (All 32 threads in one row)</div>
+                
+                <div class="calculation-box">
+                    <div class="calc-line"><strong>Calculation for threads (0-31, 0):</strong></div>
+                    <div class="calc-line">blockIdx.x=0, blockIdx.y=0, threadIdx.x=0-31, threadIdx.y=0</div>
+                    <div class="calc-line">row = 0*1 + 0 = 0</div>
+                    <div class="calc-line">col = 0*32 + (0-31) = <span class="calc-highlight">0-31</span></div>
+                    <div class="calc-line">Memory index = row × 1024 + col = <span class="calc-highlight">0-31</span></div>
+                </div>
+
+                <div class="memory-indices">
+                    <div class="indices-label">Consecutive Memory Indices:</div>
+                    <div class="indices-grid" id="block0"></div>
+                </div>
+            </div>
+
+            <div class="coalesced-visual">
+                <div class="coalesced-text">✓ COALESCED: All consecutive!</div>
+                <div class="coalesced-detail">No gaps - accesses fit in 1-2 cache lines</div>
+            </div>
+        </div>
+
+        <!-- Block 1,0 Example -->
+        <div class="block-example">
+            <div class="example-header">
+                <div class="example-title">Block(1,0) → Matrix Row 0, Elements 32-63</div>
+            </div>
+
+            <div class="warp-section">
+                <div class="section-title">Warp 0 (All 32 threads in one row)</div>
+                
+                <div class="calculation-box">
+                    <div class="calc-line"><strong>Calculation for threads (0-31, 0):</strong></div>
+                    <div class="calc-line">blockIdx.x=1, blockIdx.y=0, threadIdx.x=0-31, threadIdx.y=0</div>
+                    <div class="calc-line">row = 0*1 + 0 = 0</div>
+                    <div class="calc-line">col = 1*32 + (0-31) = <span class="calc-highlight">32-63</span></div>
+                    <div class="calc-line">Memory index = row × 1024 + col = <span class="calc-highlight">32-63</span></div>
+                </div>
+
+                <div class="memory-indices">
+                    <div class="indices-label">Consecutive Memory Indices:</div>
+                    <div class="indices-grid" id="block1"></div>
+                </div>
+            </div>
+
+            <div class="coalesced-visual">
+                <div class="coalesced-text">✓ COALESCED: All consecutive!</div>
+                <div class="coalesced-detail">Perfect continuation from Block(0,0)</div>
+            </div>
+        </div>
+
+        <!-- Block 0,1 Example -->
+        <div class="block-example">
+            <div class="example-header">
+                <div class="example-title">Block(0,1) → Matrix Row 1, Elements 0-31</div>
+            </div>
+
+            <div class="warp-section">
+                <div class="section-title">Warp 0 (All 32 threads in one row)</div>
+                
+                <div class="calculation-box">
+                    <div class="calc-line"><strong>Calculation for threads (0-31, 0):</strong></div>
+                    <div class="calc-line">blockIdx.x=0, blockIdx.y=1, threadIdx.x=0-31, threadIdx.y=0</div>
+                    <div class="calc-line">row = 1*1 + 0 = 1</div>
+                    <div class="calc-line">col = 0*32 + (0-31) = 0-31</div>
+                    <div class="calc-line">Memory index = row × 1024 + col = <span class="calc-highlight">1024-1055</span></div>
+                </div>
+
+                <div class="memory-indices">
+                    <div class="indices-label">Consecutive Memory Indices:</div>
+                    <div class="indices-grid" id="block2"></div>
+                </div>
+            </div>
+
+            <div class="coalesced-visual">
+                <div class="coalesced-text">✓ COALESCED: All consecutive!</div>
+                <div class="coalesced-detail">New row, but still perfectly coalesced within the warp</div>
+            </div>
+        </div>
+
+        <!-- Benefits Summary -->
+        <div class="benefit-summary">
+            <div class="summary-title">✓ Key Benefits of Coalesced Access</div>
+            <ul class="summary-points">
+                <li><strong>Consecutive memory access:</strong> All threads in warp access sequential addresses (0-31, 32-63, etc.)</li>
+                <li><strong>Single cache line:</strong> 32 consecutive elements fit in 1-2 cache lines (128 bytes)</li>
+                <li><strong>Efficient transactions:</strong> GPU combines all accesses into one or two memory transactions</li>
+            </ul>
+        </div>
+
+        <!-- Performance Comparison -->
+        
+    </div>
+
+    <script>
+        // Block(0,0): indices 0-31
+        const block0 = document.getElementById('block0');
+        for (let i = 0; i < 32; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'index-cell';
+            cell.textContent = i;
+            block0.appendChild(cell);
+        }
+
+        // Block(1,0): indices 32-63
+        const block1 = document.getElementById('block1');
+        for (let i = 32; i < 64; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'index-cell block-1-cell';
+            cell.textContent = i;
+            block1.appendChild(cell);
+        }
+
+        // Block(0,1): indices 1024-1055
+        const block2 = document.getElementById('block2');
+        for (let i = 1024; i < 1056; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'index-cell block-2-cell';
+            cell.textContent = i;
+            block2.appendChild(cell);
+        }
+    </script>
+</body>
+</html>

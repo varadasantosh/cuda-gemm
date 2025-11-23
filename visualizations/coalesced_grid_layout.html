@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coalesced Grid Layout</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Permanent+Marker&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Kalam', cursive;
+            background: #f5f5dc;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #fefef8;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 40px;
+            border: 2px solid #2a2a2a;
+        }
+
+        .header {
+            background: #6b9b6e;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 28px;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .header .subtitle {
+            font-size: 18px;
+            color: #fff;
+            opacity: 0.9;
+        }
+
+        .config-section {
+            background: #e8f5e9;
+            border: 3px solid #2a2a2a;
+            border-left: 6px solid #6b9b6e;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .config-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 20px;
+            color: #2a2a2a;
+            margin-bottom: 12px;
+        }
+
+        .config-item {
+            font-size: 16px;
+            color: #3a3a3a;
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+
+        .grid-visual {
+            background: #3a4a5a;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+
+        .grid-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 20px;
+            color: #6b9b6e;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .grid-row-display {
+            margin: 15px 0;
+        }
+
+        .row-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }
+
+        .row-label {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 15px;
+            color: #6b9b6e;
+            min-width: 100px;
+        }
+
+        .blocks-display {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .block-group {
+            display: flex;
+            gap: 2px;
+        }
+
+        .block-cell {
+            width: 50px;
+            height: 18px;
+            border: 1px solid #2a2a2a;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .row-0 { background: #e85d5d; }
+        .row-1 { background: #5b9dd9; }
+        .row-2 { background: #c86bff; }
+        .row-1023 { background: #888; }
+
+        .dots {
+            font-size: 20px;
+            color: #d4d4d4;
+            padding: 0 5px;
+        }
+
+        .row-info {
+            font-size: 14px;
+            color: #d4d4d4;
+            font-weight: 700;
+            min-width: 200px;
+        }
+
+        .vertical-gap {
+            text-align: center;
+            font-size: 24px;
+            color: #d4d4d4;
+            padding: 8px 0;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #d4d4d4;
+            font-size: 14px;
+        }
+
+        .legend-color {
+            width: 35px;
+            height: 18px;
+            border: 2px solid #2a2a2a;
+            border-radius: 3px;
+        }
+
+        .key-point {
+            background: #e8f5e9;
+            border: 3px solid #6b9b6e;
+            border-radius: 8px;
+            padding: 18px 22px;
+            margin: 20px 0;
+        }
+
+        .key-point-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 18px;
+            color: #2d5a2f;
+            margin-bottom: 10px;
+        }
+
+        .key-point-text {
+            font-size: 15px;
+            color: #3a3a3a;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1> Grid and Block Layout</h1>
+            <div class="subtitle">✓ Coalesced Configuration (gridDim=32×1024, blockDim=32×1)</div>
+        </div>
+
+        <div class="config-section">
+            <div class="config-title">Configuration</div>
+            <div class="config-item"><strong>Grid:</strong> dim3(32, 1024) = 32,768 blocks</div>
+            <div class="config-item"><strong>Block:</strong> dim3(32, 1) = 32 threads per block (1 warp!)</div>
+            <div class="config-item"><strong>Matrix Size:</strong> 1024 × 1024 elements</div>
+            <div class="config-item"><strong>Total Threads:</strong> 1,048,576 threads for 1024×1024 matrix</div>
+            <div class="config-item"><strong>Y Dimension:</strong> Extends from row 0 to row 1023</div>
+            <div class="config-item"><strong>X Dimension:</strong> Extends from col 0 to row 31</div>
+        </div>
+
+        <div class="grid-visual">
+            <div class="grid-title">Thread Block Grid (showing rows 0-2 and final row 1023)</div>
+            
+            <div class="grid-row-display">
+                <div class="row-container">
+                    <div class="row-label">Row 0:</div>
+                    <div class="blocks-display">
+                        <div class="block-group" id="row0start"></div>
+                        <div class="dots">...</div>
+                        <div class="block-group" id="row0end"></div>
+                    </div>
+                    <div class="row-info">32 blocks process matrix row 0</div>
+                </div>
+
+                <div class="row-container">
+                    <div class="row-label">Row 1:</div>
+                    <div class="blocks-display">
+                        <div class="block-group" id="row1start"></div>
+                        <div class="dots">...</div>
+                        <div class="block-group" id="row1end"></div>
+                    </div>
+                    <div class="row-info">32 blocks process matrix row 1</div>
+                </div>
+
+                <div class="row-container">
+                    <div class="row-label">Row 2:</div>
+                    <div class="blocks-display">
+                        <div class="block-group" id="row2start"></div>
+                        <div class="dots">...</div>
+                        <div class="block-group" id="row2end"></div>
+                    </div>
+                    <div class="row-info">32 blocks process matrix row 2</div>
+                </div>
+
+                <div class="vertical-gap">⋮<br>(continues to row 1023)</div>
+
+                <div class="row-container">
+                    <div class="row-label">Row 1023:</div>
+                    <div class="blocks-display">
+                        <div class="block-group" id="row1023start"></div>
+                        <div class="dots">...</div>
+                        <div class="block-group" id="row1023end"></div>
+                    </div>
+                    <div class="row-info">32 blocks complete 1024×1024</div>
+                </div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color row-0"></div>
+                    <span>Row 0 Blocks (Process matrix row 0)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color row-1"></div>
+                    <span>Row 1 Blocks (Process matrix row 1)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color row-1023"></div>
+                    <span>Row 1023 Blocks (Final row)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="key-point">
+            <div class="key-point-title"> Advantage</div>
+            <div class="key-point-text">
+                <strong>Each block row</strong> contains only 32 blocks (not 64!), and each block processes 
+                <strong>one complete matrix row segment</strong>. With blockDim(32, 1), each block has exactly 
+                32 threads = <strong>1 warp</strong>, and all threads stay in the same row!
+            </div>
+        </div>
+
+        <div class="key-point" style="background: #d4edda; border-color: #6b9b6e;">
+            <div class="key-point-title" style="color: #155724;">✓ Perfect for Memory Coalescing</div>
+            <div class="key-point-text">
+                <strong>Critical:</strong> Each block's 32 threads access consecutive memory locations within 
+                a single matrix row. This allows the GPU to coalesce memory accesses into efficient transactions. 
+                Let's examine a single block next...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function createBlocksWithDots(startId, endId, className, rowNum) {
+            const startContainer = document.getElementById(startId);
+            const endContainer = document.getElementById(endId);
+            
+            // Show first 8 blocks
+            for (let i = 0; i < 8; i++) {
+                const block = document.createElement('div');
+                block.className = `block-cell ${className}`;
+                block.textContent = `${i},${rowNum}`;
+                startContainer.appendChild(block);
+            }
+            
+            // Show last 3 blocks (representing blocks 29, 30, 31)
+            for (let i = 29; i < 32; i++) {
+                const block = document.createElement('div');
+                block.className = `block-cell ${className}`;
+                block.textContent = `${i},${rowNum}`;
+                endContainer.appendChild(block);
+            }
+        }
+
+        createBlocksWithDots('row0start', 'row0end', 'row-0', 0);
+        createBlocksWithDots('row1start', 'row1end', 'row-1', 1);
+        createBlocksWithDots('row2start', 'row2end', 'row-2', 2);
+        createBlocksWithDots('row1023start', 'row1023end', 'row-1023', 1023);
+    </script>
+</body>
+</html>
