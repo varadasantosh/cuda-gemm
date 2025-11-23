@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Warp Access Patterns</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Permanent+Marker&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Kalam', cursive;
+            background: #f5f5dc;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #fefef8;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 40px;
+            border: 2px solid #2a2a2a;
+        }
+
+        .header {
+            background: #e85d5d;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 28px;
+            color: white;
+        }
+
+        .warp-example {
+            background: white;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+
+        .example-header {
+            background: #f0ad4e;
+            border: 2px solid #2a2a2a;
+            border-radius: 6px;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+        }
+
+        .example-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 22px;
+            color: #2a2a2a;
+            text-align: center;
+        }
+
+        .thread-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f8f8;
+            border-radius: 6px;
+            border-left: 5px solid;
+        }
+
+        .section-0 { border-left-color: #ff6b6b; }
+        .section-1 { border-left-color: #ffa06b; }
+        .section-2 { border-left-color: #ffd06b; }
+        .section-3 { border-left-color: #a8d5a8; }
+
+        .section-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 18px;
+            color: #2a2a2a;
+            margin-bottom: 12px;
+        }
+
+        .calculation-box {
+            background: #e8f4f8;
+            border: 2px solid #5b9dd9;
+            border-radius: 6px;
+            padding: 12px 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .calc-line {
+            color: #3a3a3a;
+        }
+
+        .calc-highlight {
+            background: #fff9c4;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: 700;
+        }
+
+        .memory-indices {
+            margin-top: 12px;
+        }
+
+        .indices-label {
+            font-weight: 700;
+            font-size: 15px;
+            color: #2a2a2a;
+            margin-bottom: 8px;
+        }
+
+        .indices-grid {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 3px;
+            margin-top: 8px;
+        }
+
+        .index-cell {
+            aspect-ratio: 1;
+            border: 2px solid #2a2a2a;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: 700;
+            color: white;
+            background: #ff6b6b;
+        }
+
+        .warp-1-cell { background: #ffa06b; }
+
+        .gap-visual {
+            background: #fff3cd;
+            border: 3px solid #f0ad4e;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .gap-text {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 20px;
+            color: #856404;
+        }
+
+        .gap-detail {
+            font-size: 15px;
+            color: #3a3a3a;
+            margin-top: 8px;
+        }
+
+        .problem-summary {
+            background: #f8d7da;
+            border: 3px solid #e85d5d;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+
+        .summary-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 20px;
+            color: #721c24;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .summary-points {
+            list-style: none;
+            padding: 0;
+        }
+
+        .summary-points li {
+            font-size: 16px;
+            color: #3a3a3a;
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .summary-points li::before {
+            content: '✗';
+            position: absolute;
+            left: 0;
+            color: #e85d5d;
+            font-weight: 700;
+            font-size: 20px;
+        }
+
+        .solution-box {
+            background: #d4edda;
+            border: 3px solid #6b9b6e;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+
+        .solution-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 20px;
+            color: #155724;
+            margin-bottom: 12px;
+        }
+
+        .solution-text {
+            font-size: 16px;
+            color: #3a3a3a;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1> Warp Memory Access Patterns</h1>
+        </div>
+
+        <!-- Warp 0 Example -->
+        <div class="warp-example">
+            <div class="example-header">
+                <div class="example-title">Example: Warp 0 (Threads 0-31) in Block(0,0)</div>
+            </div>
+
+            <!-- Threads 0-15 -->
+            <div class="thread-section section-0">
+                <div class="section-title">Threads 0-15 (threadIdx.y=0):</div>
+                
+                <div class="calculation-box">
+                    <div class="calc-line"><strong>Calculation:</strong></div>
+                    <div class="calc-line">blockIdx.x=0, blockIdx.y=0, threadIdx.x=0-15, threadIdx.y=0</div>
+                    <div class="calc-line">row = 0*16 + 0 = 0</div>
+                    <div class="calc-line">col = 0*16 + (0-15) = <span class="calc-highlight">0-15</span></div>
+                    <div class="calc-line">Memory index = row × 1024 + col = <span class="calc-highlight">0-15</span></div>
+                </div>
+
+                <div class="memory-indices">
+                    <div class="indices-label">Memory Indices:</div>
+                    <div class="indices-grid" id="warp0part1"></div>
+                </div>
+            </div>
+
+            <!-- Threads 16-31 -->
+            <div class="thread-section section-1">
+                <div class="section-title">Threads 16-31 (threadIdx.y=1):</div>
+                
+                <div class="calculation-box">
+                    <div class="calc-line"><strong>Calculation:</strong></div>
+                    <div class="calc-line">blockIdx.x=0, blockIdx.y=0, threadIdx.x=0-15, threadIdx.y=1</div>
+                    <div class="calc-line">row = 0*16 + 1 = 1</div>
+                    <div class="calc-line">col = 0*16 + (0-15) = 0-15</div>
+                    <div class="calc-line">Memory index = row × 1024 + col = <span class="calc-highlight">1024-1039</span></div>
+                </div>
+
+                <div class="memory-indices">
+                    <div class="indices-label">Memory Indices:</div>
+                    <div class="indices-grid" id="warp0part2"></div>
+                </div>
+            </div>
+
+            <div class="gap-visual">
+                <div class="gap-text">❌ GAP: 1009 elements</div>
+                <div class="gap-detail">Between index 15 and 1024 = 1009 elements!</div>
+            </div>
+        </div>
+
+        <!-- Warp 1 Example -->
+        <div class="warp-example">
+            <div class="example-header">
+                <div class="example-title">Example: Warp 1 (Threads 32-63) in Block(0,0)</div>
+            </div>
+
+            <!-- Threads 32-47 -->
+            <div class="thread-section section-2">
+                <div class="section-title">Threads 32-47 (threadIdx.y=2):</div>
+                
+                <div class="calculation-box">
+                    <div class="calc-line"><strong>Calculation:</strong></div>
+                    <div class="calc-line">blockIdx.x=0, blockIdx.y=0, threadIdx.x=0-15, threadIdx.y=2</div>
+                    <div class="calc-line">row = 0*16 + 2 = 2</div>
+                    <div class="calc-line">col = 0*16 + (0-15) = 0-15</div>
+                    <div class="calc-line">Memory index = row × 1024 + col = <span class="calc-highlight">2048-2063</span></div>
+                </div>
+
+                <div class="memory-indices">
+                    <div class="indices-label">Memory Indices:</div>
+                    <div class="indices-grid" id="warp1part1"></div>
+                </div>
+            </div>
+
+            <!-- Threads 48-63 -->
+            <div class="thread-section section-3">
+                <div class="section-title">Threads 48-63 (threadIdx.y=3):</div>
+                
+                <div class="calculation-box">
+                    <div class="calc-line"><strong>Calculation:</strong></div>
+                    <div class="calc-line">blockIdx.x=0, blockIdx.y=0, threadIdx.x=0-15, threadIdx.y=3</div>
+                    <div class="calc-line">row = 0*16 + 3 = 3</div>
+                    <div class="calc-line">col = 0*16 + (0-15) = 0-15</div>
+                    <div class="calc-line">Memory index = row × 1024 + col = <span class="calc-highlight">3072-3087</span></div>
+                </div>
+
+                <div class="memory-indices">
+                    <div class="indices-label">Memory Indices:</div>
+                    <div class="indices-grid" id="warp1part2"></div>
+                </div>
+            </div>
+
+            <div class="gap-visual">
+                <div class="gap-text">❌ GAP: 1009 elements</div>
+                <div class="gap-detail">Between index 2063 and 3072 = 1009 elements!</div>
+            </div>
+        </div>
+
+        <!-- Problem Summary -->
+        <div class="problem-summary">
+            <div class="summary-title">  Problems</div>
+            <ul class="summary-points">
+                <li>Gap between memory accesses = <strong>1009 elements</strong> (or 1024 when counting the full stride)</li>
+                <li>GPU cannot coalesce these into a single memory transaction</li>
+                <li>Requires <strong>multiple memory transactions</strong> per warp</li>
+                <li>Pattern continues for <strong>all 8 warps</strong> in the block</li>
+            </ul>
+        </div>
+
+        <!-- Solution -->
+        <div class="solution-box">
+            <div class="solution-title">✓ Solution: Use blockDim(32, 32) or (32, 16)</div>
+            <div class="solution-text">
+                 With blockDim.x = 32, all 32 threads of a warp 
+                stay within the <strong>same matrix row</strong>. They access consecutive memory locations 
+                (e.g., indices 0-31, 32-63, etc.) that can be coalesced into 1-2 transactions. 
+                This eliminates the 1009-element gaps and maximizes memory bandwidth utilization!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Warp 0 Part 1 (indices 0-15)
+        const warp0part1 = document.getElementById('warp0part1');
+        for (let i = 0; i < 16; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'index-cell';
+            cell.textContent = i;
+            warp0part1.appendChild(cell);
+        }
+
+        // Warp 0 Part 2 (indices 1024-1039)
+        const warp0part2 = document.getElementById('warp0part2');
+        for (let i = 1024; i < 1040; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'index-cell';
+            cell.textContent = i;
+            warp0part2.appendChild(cell);
+        }
+
+        // Warp 1 Part 1 (indices 2048-2063)
+        const warp1part1 = document.getElementById('warp1part1');
+        for (let i = 2048; i < 2064; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'index-cell warp-1-cell';
+            cell.textContent = i;
+            warp1part1.appendChild(cell);
+        }
+
+        // Warp 1 Part 2 (indices 3072-3087)
+        const warp1part2 = document.getElementById('warp1part2');
+        for (let i = 3072; i < 3088; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'index-cell warp-1-cell';
+            cell.textContent = i;
+            warp1part2.appendChild(cell);
+        }
+    </script>
+</body>
+</html>
