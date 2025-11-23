@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory ↔ Processing Unit Mapping - Notebook Style</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Permanent+Marker&family=Indie+Flower&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Kalam', cursive;
+            background: #f5f5dc;
+            background-image: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 31px,
+                    rgba(135, 206, 235, 0.3) 31px,
+                    rgba(135, 206, 235, 0.3) 32px
+                );
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .notebook-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: #fefef8;
+            border-radius: 8px;
+            box-shadow: 
+                0 2px 4px rgba(0,0,0,0.1),
+                0 8px 16px rgba(0,0,0,0.1);
+            padding: 50px 60px;
+            border: 2px solid #2a2a2a;
+            position: relative;
+        }
+
+        /* Spiral binding holes */
+        .notebook-container::before {
+            content: '';
+            position: absolute;
+            left: 40px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent 60px,
+                #ddd 60px,
+                #ddd 70px
+            );
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 20px;
+            border-bottom: 4px solid #6b9b6e;
+        }
+
+        .header h1 {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 38px;
+            color: #2d5a2f;
+            margin-bottom: 10px;
+            transform: rotate(-0.5deg);
+            text-shadow: 2px 2px 0px rgba(107, 155, 110, 0.2);
+        }
+
+        .header .subtitle {
+            font-family: 'Indie Flower', cursive;
+            font-size: 18px;
+            color: #555;
+            font-weight: 400;
+        }
+
+        .mapping-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            position: relative;
+        }
+
+        .mapping-row {
+            display: contents;
+        }
+
+        .memory-item, .processing-item {
+            background: white;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 22px 25px;
+            margin-bottom: 30px;
+            box-shadow: 
+                2px 2px 0px rgba(0,0,0,0.1),
+                0 4px 8px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .memory-item {
+            border-left: 6px solid #6b9b6e;
+        }
+
+        .processing-item {
+            border-left: 6px solid #5b9dd9;
+        }
+
+        .memory-item:hover, .processing-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 
+                3px 3px 0px rgba(0,0,0,0.15),
+                0 6px 12px rgba(0,0,0,0.1);
+        }
+
+        .item-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #2a2a2a;
+            border-bottom: 2px dashed #888;
+            padding-bottom: 10px;
+        }
+
+        .item-specs {
+            font-family: 'Kalam', cursive;
+            font-size: 15px;
+            line-height: 1.7;
+            color: #3a3a3a;
+        }
+
+        .spec-line {
+            margin: 5px 0;
+        }
+
+        .spec-label {
+            font-weight: 700;
+            color: #2a2a2a;
+        }
+
+        .mapping-note {
+            background: #fff8dc;
+            border: 2px solid #f0ad4e;
+            border-left: 5px solid #f0ad4e;
+            border-radius: 5px;
+            padding: 12px 15px;
+            margin-top: 12px;
+            font-size: 14px;
+            font-style: italic;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .connector-badge {
+            position: absolute;
+            right: -50px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #f0ad4e;
+            color: white;
+            font-family: 'Permanent Marker', cursive;
+            font-size: 13px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 3px solid #2a2a2a;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+            white-space: nowrap;
+            z-index: 5;
+        }
+
+        .connector-line {
+            position: absolute;
+            right: -80px;
+            top: 50%;
+            width: 80px;
+            height: 3px;
+            background: repeating-linear-gradient(
+                to right,
+                #f0ad4e 0px,
+                #f0ad4e 10px,
+                transparent 10px,
+                transparent 15px
+            );
+            z-index: 1;
+        }
+
+        /* Rotation for natural look */
+        .memory-item:nth-child(odd) {
+            transform: rotate(-0.3deg);
+        }
+
+        .memory-item:nth-child(even) {
+            transform: rotate(0.3deg);
+        }
+
+        .processing-item:nth-child(odd) {
+            transform: rotate(0.3deg);
+        }
+
+        .processing-item:nth-child(even) {
+            transform: rotate(-0.3deg);
+        }
+
+        @media (max-width: 1200px) {
+            .mapping-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .connector-badge, .connector-line {
+                display: none;
+            }
+        }
+
+        .section-label {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 28px;
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+            border: 3px solid;
+        }
+
+        .memory-label {
+            background: #6b9b6e;
+            color: white;
+            border-color: #4a7a4d;
+            grid-column: 1;
+        }
+
+        .processing-label {
+            background: #5b9dd9;
+            color: white;
+            border-color: #3d7db5;
+            grid-column: 2;
+        }
+    </style>
+</head>
+<body>
+    <div class="notebook-container">
+        <div class="header">
+            <h1>Memory ↔ Processing Unit Mapping</h1>
+            <div class="subtitle">NVIDIA A100 Architecture - Memory and Processing Relationships</div>
+        </div>
+
+        <div class="mapping-grid">
+            <!-- Column Headers -->
+            <div class="section-label memory-label">Memory Hierarchy</div>
+            <div class="section-label processing-label">Processing Units</div>
+
+            <!-- Row 1: Registers ↔ Individual Thread -->
+            <div class="memory-item">
+                <div class="item-title">REGISTERS</div>
+                <div class="item-specs">
+                    <div class="spec-line"><span class="spec-label">Capacity:</span> 64K per SM</div>
+                    <div class="spec-line"><span class="spec-label">Max per Thread:</span> 255 registers</div>
+                    <div class="spec-line"><span class="spec-label">Access Time:</span> 1 cycle</div>
+                    <div class="spec-line"><span class="spec-label">Scope:</span> Thread local</div>
+                </div>
+                <div class="mapping-note">
+                    Register Mapping: Each thread has exclusive access to its allocated registers
+                </div>
+                <div class="connector-badge">1:1</div>
+                <div class="connector-line"></div>
+            </div>
+
+            <div class="processing-item">
+                <div class="item-title">INDIVIDUAL THREAD</div>
+                <div class="item-specs">
+                    <div class="spec-line"><span class="spec-label">Registers:</span> Private 32-bit</div>
+                    <div class="spec-line"><span class="spec-label">Execution:</span> Scalar</div>
+                    <div class="spec-line"><span class="spec-label">Scope:</span> Thread local</div>
+                </div>
+            </div>
+
+            <!-- Row 2: Shared Memory ↔ Thread Block -->
+            <div class="memory-item">
+                <div class="item-title">SHARED MEMORY</div>
+                <div class="item-specs">
+                    <div class="spec-line"><span class="spec-label">Capacity:</span> 164KB per SM</div>
+                    <div class="spec-line"><span class="spec-label">Max per Block:</span> 163KB</div>
+                    <div class="spec-line"><span class="spec-label">Banks:</span> 32 banks</div>
+                    <div class="spec-line"><span class="spec-label">Scope:</span> Per Thread Block</div>
+                </div>
+                <div class="mapping-note">
+                    Shared Memory Mapping: All threads within a block can read/write shared memory
+                </div>
+                <div class="connector-badge">1 Block</div>
+                <div class="connector-line"></div>
+            </div>
+
+            <div class="processing-item">
+                <div class="item-title">THREAD BLOCK</div>
+                <div class="item-specs">
+                    <div class="spec-line"><span class="spec-label">Size:</span> 32-1024 threads</div>
+                    <div class="spec-line"><span class="spec-label">Max per SM:</span> 32 blocks</div>
+                    <div class="spec-line"><span class="spec-label">Sync:</span> __syncthreads()</div>
+                </div>
+            </div>
+
+            <!-- Row 3: L1/Texture Cache ↔ Streaming Multiprocessor -->
+            <div class="memory-item">
+                <div class="item-title">L1 CACHE</div>
+                <div class="item-specs">
+                    <div class="spec-line"><span class="spec-label">Combined:</span> 192KB per SM</div>
+                    <div class="spec-line"><span class="spec-label">Type:</span> Unified L1</div>
+                    <div class="spec-line"><span class="spec-label">Management:</span> Hardware</div>
+                </div>
+                <div class="mapping-note">
+                    L1 Cache Mapping: All warps executing on an SM share the unified L1 cache
+                </div>
+                <div class="connector-badge">1 SM</div>
+                <div class="connector-line"></div>
+            </div>
+
+            <div class="processing-item">
+                <div class="item-title">STREAMING MULTIPROCESSOR</div>
+                <div class="item-specs">
+                    <div class="spec-line"><span class="spec-label">CUDA Cores:</span> 64 FP32, 32 FP64</div>
+                    <div class="spec-line"><span class="spec-label">Schedulers:</span> 4 warp schedulers</div>
+                    <div class="spec-line"><span class="spec-label">Max Warps:</span> 64 concurrent</div>
+                </div>
+            </div>
+
+            <!-- Row 4: L2 Cache ↔ Entire GPU Device -->
+            <div class="memory-item">
+                <div class="item-title">L2 CACHE</div>
+                <div class="item-specs">
+                    <div class="spec-line"><span class="spec-label">Capacity:</span> 40MB (A100)</div>
+                    <div class="spec-line"><span class="spec-label">Bandwidth:</span> ~3TB/s</div>
+                    <div class="spec-line"><span class="spec-label">Features:</span> Persistence control</div>
+                </div>
+                <div class="mapping-note">
+                    L2 Cache Mapping: Shared among all SMs on the GPU with persistence controls
+                </div>
+                <div class="connector-badge">1 GPU</div>
+                <div class="connector-line"></div>
+            </div>
+
+            <div class="processing-item">
+                <div class="item-title">ENTIRE GPU DEVICE</div>
+                <div class="item-specs">
+                    <div class="spec-line"><span class="spec-label">Total SMs:</span> 108 SM</div>
+                    <div class="spec-line"><span class="spec-label">Total Cores:</span> 6912 CUDA (108 SM * 64 cores per SM)</div>
+                    <div class="spec-line"><span class="spec-label">Tensor Cores:</span> 432 (108 SM * 4 per SM)</div>
+                </div>
+            </div>
+
+            <!-- Row 5: HBM2e Global Memory ↔ All GPU + Host System -->
+            <div class="memory-item">
+                <div class="item-title">HBM2E GLOBAL MEMORY</div>
+                <div class="item-specs">
+                    <div class="spec-line"><span class="spec-label">Capacity:</span> 40/80GB</div>
+                    <div class="spec-line"><span class="spec-label">Bandwidth:</span> 1.6-1.9TB/s</div>
+                    <div class="spec-line"><span class="spec-label">Bus Width:</span> 5120-bit</div>
+                </div>
+                <div class="mapping-note">
+                    HBM2e Memory Mapping: Main GPU memory with unified memory support
+                </div>
+                <div class="connector-badge">All SM</div>
+                <div class="connector-line"></div>
+            </div>
+
+            <div class="processing-item">
+                <div class="item-title">ALL GPU + HOST SYSTEM</div>
+                <div class="item-specs">
+                    <div class="spec-line"><span class="spec-label">GPU Access:</span> All threads</div>
+                    <div class="spec-line"><span class="spec-label">Host Access:</span> PCIe/NVLink</div>
+                    <div class="spec-line"><span class="spec-label">Features:</span> Unified Memory</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
