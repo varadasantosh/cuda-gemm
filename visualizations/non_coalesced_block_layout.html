@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Block Layout & Warp Distribution</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Permanent+Marker&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Kalam', cursive;
+            background: #f5f5dc;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #fefef8;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 40px;
+            border: 2px solid #2a2a2a;
+        }
+
+        .header {
+            background: #e85d5d;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 28px;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .header .subtitle {
+            font-size: 18px;
+            color: #fff;
+            opacity: 0.9;
+        }
+
+        .block-visual {
+            background: #3a4a5a;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 25px 0;
+        }
+
+        .block-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 22px;
+            color: #f0ad4e;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .thread-grid {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 3px;
+            max-width: 650px;
+            margin: 0 auto 20px;
+        }
+
+        .thread-cell {
+            aspect-ratio: 1;
+            border: 2px solid #2a2a2a;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .warp-0 { background: #ff6b6b; }
+        .warp-1 { background: #ffa06b; }
+        .warp-2 { background: #ffd06b; }
+        .warp-3 { background: #a8d5a8; }
+        .warp-4 { background: #6bb8ff; }
+        .warp-5 { background: #c86bff; }
+        .warp-6 { background: #ff6bc8; }
+        .warp-7 { background: #b0b0b0; }
+
+        .warp-legend {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #d4d4d4;
+        }
+
+        .legend-color {
+            width: 25px;
+            height: 18px;
+            border: 2px solid #2a2a2a;
+            border-radius: 3px;
+        }
+
+        .problem-box {
+            background: #fff3cd;
+            border: 3px solid #f0ad4e;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .problem-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 20px;
+            color: #856404;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .problem-text {
+            font-size: 16px;
+            color: #3a3a3a;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .warp-detail {
+            background: white;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .warp-detail-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 18px;
+            color: #2a2a2a;
+            margin-bottom: 15px;
+        }
+
+        .warp-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .warp-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px;
+            background: #f8f8f8;
+            border-radius: 6px;
+            border-left: 5px solid;
+        }
+
+        .row-0-border { border-left-color: #ff6b6b; }
+        .row-1-border { border-left-color: #ffa06b; }
+
+        .warp-row-label {
+            font-weight: 700;
+            min-width: 150px;
+            font-size: 15px;
+        }
+
+        .warp-row-threads {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 2px;
+            flex: 1;
+        }
+
+        .small-thread {
+            aspect-ratio: 1;
+            border: 1px solid #2a2a2a;
+            border-radius: 2px;
+            font-size: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+        }
+
+        .arrow-down {
+            text-align: center;
+            font-size: 30px;
+            color: #f0ad4e;
+            margin: 10px 0;
+        }
+
+        .cache-line-visual {
+            background: white;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .cache-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 18px;
+            color: #2a2a2a;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .cache-line {
+            background: #f0f0f0;
+            border: 3px solid #333;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 12px 0;
+        }
+
+        .cache-label {
+            font-weight: 700;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .cache-cells {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 2px;
+        }
+
+        .cache-cell {
+            aspect-ratio: 1;
+            border: 2px solid #2a2a2a;
+            border-radius: 2px;
+            font-size: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1> Block Layout & Warp Distribution</h1>
+            <div class="subtitle">Single Block (16×16 threads)</div>
+        </div>
+
+        <div class="block-visual">
+            <div class="block-title">Thread Block Layout: 16×16 = 256 Threads = 8 Warps</div>
+            
+            <div class="thread-grid" id="threadGrid"></div>
+
+            <div class="warp-legend">
+                <div class="legend-item">
+                    <div class="legend-color warp-0"></div>
+                    <span>Warp 0</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color warp-1"></div>
+                    <span>Warp 1</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color warp-2"></div>
+                    <span>Warp 2</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color warp-3"></div>
+                    <span>Warp 3</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color warp-4"></div>
+                    <span>Warp 4</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color warp-5"></div>
+                    <span>Warp 5</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color warp-6"></div>
+                    <span>Warp 6</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color warp-7"></div>
+                    <span>Warp 7</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="problem-box">
+            <div class="problem-title">⚠️ The Critical Issue</div>
+            <div class="problem-text">
+                <strong>Each warp's 32 threads span 2 rows!</strong><br>
+                Threads shown as <strong>(threadIdx.x, threadIdx.y)</strong><br>
+                Since blockDim.x = 16, threads (0-15, 0) are in row 0, and threads (0-15, 1) are in row 1.<br>
+                This means they access memory locations 1024 elements apart!
+            </div>
+        </div>
+
+        <div class="warp-detail">
+            <div class="warp-detail-title">Warp 0 Breakdown (32 threads with threadIdx.y = 0,1)</div>
+            
+            <div class="warp-rows">
+                <div class="warp-row row-0-border">
+                    <div class="warp-row-label">Row 0: (0-15, 0)</div>
+                    <div class="warp-row-threads" id="warp0row0"></div>
+                </div>
+                
+                <div class="warp-row row-1-border">
+                    <div class="warp-row-label">Row 1: (0-15, 1)</div>
+                    <div class="warp-row-threads" id="warp0row1"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="arrow-down">⬇</div>
+
+        <div class="cache-line-visual">
+            <div class="cache-title">Memory Access Pattern (Warp 0)</div>
+            
+            <div class="cache-line">
+                <div class="cache-label">Cache Line 1: Matrix Row 0 (Threads (0-15, 0))</div>
+                <div class="cache-cells" id="cacheLine1"></div>
+            </div>
+
+            <div style="text-align: center; font-size: 18px; color: #e85d5d; font-weight: 700; margin: 15px 0;">
+                ❌ GAP: 1009 elements (indices 16 to 1023)
+            </div>
+
+            <div class="cache-line">
+                <div class="cache-label">Cache Line 2: Matrix Row 1 (Threads (0-15, 1))</div>
+                <div class="cache-cells" id="cacheLine2"></div>
+            </div>
+        </div>
+
+        <div class="problem-box" style="background: #f8d7da; border-color: #e85d5d;">
+            <div class="problem-title" style="color: #721c24;">❌ Non-Coalesced Access</div>
+            <div class="problem-text">
+                The GPU cannot combine these into a single memory transaction because 
+                threads access locations <strong>1024 elements apart</strong>. Result: 
+                <strong>2 separate transactions</strong> per warp, <strong>50% bandwidth waste</strong>.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Generate 16x16 thread grid with 2D indices
+        const threadGrid = document.getElementById('threadGrid');
+        for (let y = 0; y < 16; y++) {
+            for (let x = 0; x < 16; x++) {
+                const cell = document.createElement('div');
+                cell.className = 'thread-cell';
+                cell.textContent = `${x},${y}`;
+                
+                // Calculate linear thread ID for warp assignment
+                const linearId = y * 16 + x;
+                const warpId = Math.floor(linearId / 32);
+                cell.classList.add(`warp-${warpId}`);
+                
+                threadGrid.appendChild(cell);
+            }
+        }
+
+        // Generate Warp 0 Row 0 (threads with y=0, x=0-15)
+        const warp0row0 = document.getElementById('warp0row0');
+        for (let x = 0; x < 16; x++) {
+            const cell = document.createElement('div');
+            cell.className = 'small-thread warp-0';
+            cell.textContent = `${x},0`;
+            warp0row0.appendChild(cell);
+        }
+
+        // Generate Warp 0 Row 1 (threads with y=1, x=0-15)
+        const warp0row1 = document.getElementById('warp0row1');
+        for (let x = 0; x < 16; x++) {
+            const cell = document.createElement('div');
+            cell.className = 'small-thread warp-0';
+            cell.textContent = `${x},1`;
+            warp0row1.appendChild(cell);
+        }
+
+        // Generate Cache Line 1 (memory indices 0-15)
+        const cacheLine1 = document.getElementById('cacheLine1');
+        for (let i = 0; i < 16; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cache-cell warp-0';
+            cell.textContent = i;
+            cacheLine1.appendChild(cell);
+        }
+
+        // Generate Cache Line 2 (memory indices 1024-1039)
+        const cacheLine2 = document.getElementById('cacheLine2');
+        for (let i = 0; i < 16; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cache-cell warp-0';
+            cell.textContent = 1024 + i;
+            cacheLine2.appendChild(cell);
+        }
+    </script>
+</body>
+</html>

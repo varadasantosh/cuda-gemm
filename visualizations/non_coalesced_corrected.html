@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Non-Coalesced Memory Access Pattern - Corrected</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Permanent+Marker&family=Indie+Flower&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Kalam', cursive;
+            background: #f5f5dc;
+            background-image: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 31px,
+                    rgba(135, 206, 235, 0.3) 31px,
+                    rgba(135, 206, 235, 0.3) 32px
+                );
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .notebook-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: #fefef8;
+            border-radius: 8px;
+            box-shadow: 
+                0 2px 4px rgba(0,0,0,0.1),
+                0 8px 16px rgba(0,0,0,0.1);
+            padding: 50px 60px;
+            border: 2px solid #2a2a2a;
+            position: relative;
+        }
+
+        .notebook-container::before {
+            content: '';
+            position: absolute;
+            left: 40px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent 60px,
+                #ddd 60px,
+                #ddd 70px
+            );
+        }
+
+        .header {
+            background: #e85d5d;
+            border: 3px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 40px;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 38px;
+            color: white;
+            text-align: center;
+            margin: 0;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 26px;
+            background: #c85050;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            border: 3px solid #2a2a2a;
+            margin-bottom: 20px;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.15);
+        }
+
+        .config-box {
+            background: white;
+            border: 3px solid #2a2a2a;
+            border-left: 6px solid #e85d5d;
+            border-radius: 8px;
+            padding: 25px 30px;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+        }
+
+        .config-item {
+            font-size: 17px;
+            color: #3a3a3a;
+            line-height: 1.8;
+            margin: 8px 0;
+        }
+
+        .config-item strong {
+            color: #2a2a2a;
+            font-weight: 700;
+        }
+
+        .grid-container {
+            background: #3a4a5a;
+            border: 3px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 25px 0;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.2);
+        }
+
+        .grid-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 22px;
+            color: #f0ad4e;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .grid-subtitle {
+            font-family: 'Kalam', cursive;
+            font-size: 16px;
+            color: #d4d4d4;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .block-grid-2d {
+            display: grid;
+            gap: 1px;
+            background: #2a2a2a;
+            border: 2px solid #2a2a2a;
+            margin: 0 auto;
+            width: fit-content;
+        }
+
+        .full-grid-representation {
+            background: #2a3a4a;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .grid-row-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 12px 0;
+            padding: 12px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+        }
+
+        .row-label {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 16px;
+            color: #f0ad4e;
+            min-width: 110px;
+            text-align: right;
+        }
+
+        .blocks-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .visible-blocks {
+            display: flex;
+            gap: 2px;
+        }
+
+        .grid-cell {
+            width: 14px;
+            height: 14px;
+            border: 1px solid #2a2a2a;
+            border-radius: 2px;
+        }
+
+        .dots-indicator {
+            font-size: 24px;
+            color: #d4d4d4;
+            font-weight: bold;
+            padding: 0 10px;
+        }
+
+        .end-blocks {
+            display: flex;
+            gap: 2px;
+        }
+
+        .row-info {
+            font-family: 'Kalam', cursive;
+            font-size: 15px;
+            color: #d4d4d4;
+            min-width: 250px;
+            font-weight: 700;
+        }
+
+        .vertical-dots {
+            text-align: center;
+            font-size: 30px;
+            color: #d4d4d4;
+            padding: 10px 0;
+        }
+
+        .row-0-blocks .grid-cell { background: #e85d5d; }
+        .row-1-blocks .grid-cell { background: #5b9dd9; }
+        .row-2-blocks .grid-cell { background: #6b9b6e; }
+        .row-63-blocks .grid-cell { background: #888; }
+
+        .block-row-0 { background: #e85d5d; }
+        .block-row-1 { background: #5b9dd9; }
+        .block-row-2 { background: #6b9b6e; }
+        .block-row-3 { background: #f0ad4e; }
+        .block-row-other { background: #888; }
+
+        .hierarchy-diagram {
+            background: white;
+            border: 3px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 25px 0;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+        }
+
+        .hierarchy-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 24px;
+            color: #2a2a2a;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .hierarchy-level {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f8f8;
+            border-radius: 8px;
+            border-left: 5px solid;
+        }
+
+        .level-1 { border-left-color: #e85d5d; }
+        .level-2 { border-left-color: #5b9dd9; }
+        .level-3 { border-left-color: #6b9b6e; }
+
+        .hierarchy-icon {
+            font-size: 30px;
+        }
+
+        .hierarchy-text {
+            flex: 1;
+        }
+
+        .hierarchy-text strong {
+            display: block;
+            font-size: 18px;
+            color: #2a2a2a;
+            margin-bottom: 5px;
+        }
+
+        .hierarchy-text span {
+            font-size: 15px;
+            color: #555;
+        }
+
+        .problem-box {
+            background: #fff3cd;
+            border: 4px solid #f0ad4e;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+
+        .problem-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 24px;
+            color: #856404;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .problem-text {
+            font-size: 17px;
+            line-height: 1.7;
+            color: #3a3a3a;
+            text-align: center;
+        }
+
+        .warp-visualization {
+            background: #3a4a5a;
+            border: 3px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 25px 0;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.2);
+        }
+
+        .warp-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 22px;
+            color: #f0ad4e;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .single-block-view {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 3px;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+
+        .thread-cell {
+            aspect-ratio: 1;
+            border: 2px solid #2a2a2a;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .warp-0 { background: #ff6b6b; }
+        .warp-1 { background: #ffa06b; }
+        .warp-2 { background: #ffd06b; }
+        .warp-3 { background: #a8d5a8; }
+
+        .warp-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .warp-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #d4d4d4;
+            font-size: 14px;
+        }
+
+        .warp-color {
+            width: 25px;
+            height: 20px;
+            border: 2px solid #2a2a2a;
+            border-radius: 3px;
+        }
+
+        .memory-diagram {
+            background: white;
+            border: 3px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+        }
+
+        .memory-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 22px;
+            color: #2a2a2a;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .memory-row-visual {
+            margin: 20px 0;
+        }
+
+        .memory-row-label {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .memory-cells {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 3px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .memory-cell {
+            aspect-ratio: 1;
+            border: 2px solid #2a2a2a;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: 700;
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .gap-indicator {
+            text-align: center;
+            font-size: 18px;
+            color: #e85d5d;
+            font-weight: 700;
+            margin: 15px 0;
+        }
+
+        .impact-box {
+            background: #f8d7da;
+            border: 3px solid #e85d5d;
+            border-radius: 8px;
+            padding: 20px 25px;
+            margin: 20px 0;
+        }
+
+        .impact-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 22px;
+            color: #721c24;
+            margin-bottom: 15px;
+        }
+
+        .impact-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .impact-list li {
+            font-size: 16px;
+            color: #3a3a3a;
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .impact-list li::before {
+            content: '✗';
+            position: absolute;
+            left: 0;
+            color: #e85d5d;
+            font-weight: 700;
+            font-size: 20px;
+        }
+
+        .solution-box {
+            background: #d4edda;
+            border: 3px solid #6b9b6e;
+            border-radius: 8px;
+            padding: 20px 25px;
+            margin: 20px 0;
+        }
+
+        .solution-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 22px;
+            color: #155724;
+            margin-bottom: 15px;
+        }
+
+        .solution-text {
+            font-size: 16px;
+            color: #3a3a3a;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="notebook-container">
+        <div class="header">
+            <h1>✗ Non-Coalesced Memory Access Pattern</h1>
+            <h1 style="font-size: 28px; margin-top: 10px;">blockDim(16, 16)</h1>
+        </div>
+
+        <!-- Configuration -->
+        <div class="section">
+            <div class="section-title">1. Configuration: gridDim(64, 64) and blockDim(16, 16)</div>
+            
+            <div class="config-box">
+                <div class="config-item"><strong>Grid Dimensions:</strong> 64 rows × 64 columns of blocks = 4,096 blocks total</div>
+                <div class="config-item"><strong>Block Dimensions:</strong> 16 rows × 16 columns of threads = 256 threads per block</div>
+                <div class="config-item"><strong>Warps per Block:</strong> 256 threads ÷ 32 = 8 warps</div>
+                <div class="config-item"><strong>Total Threads:</strong> 4,096 blocks × 256 threads = 1,048,576 threads</div>
+            </div>
+
+            <div class="grid-container">
+                <div class="grid-title">2D Block Grid Structure (64×64 grid - showing first rows and final row)</div>
+                <div class="grid-subtitle">Each row contains 64 blocks processing 16 matrix rows</div>
+                
+                <div style="overflow-x: auto;">
+                    <div class="full-grid-representation">
+                        <div class="grid-row-container">
+                            <div class="row-label">Block Row 0:</div>
+                            <div class="blocks-row row-0-blocks">
+                                <div class="visible-blocks" id="row0blocks"></div>
+                                <div class="dots-indicator">...</div>
+                                <div class="end-blocks" id="row0end"></div>
+                            </div>
+                            <div class="row-info">→ 64 blocks process matrix rows 0-15</div>
+                        </div>
+                        
+                        <div class="grid-row-container">
+                            <div class="row-label">Block Row 1:</div>
+                            <div class="blocks-row row-1-blocks">
+                                <div class="visible-blocks" id="row1blocks"></div>
+                                <div class="dots-indicator">...</div>
+                                <div class="end-blocks" id="row1end"></div>
+                            </div>
+                            <div class="row-info">→ 64 blocks process matrix rows 16-31</div>
+                        </div>
+                        
+                        <div class="grid-row-container">
+                            <div class="row-label">Block Row 2:</div>
+                            <div class="blocks-row row-2-blocks">
+                                <div class="visible-blocks" id="row2blocks"></div>
+                                <div class="dots-indicator">...</div>
+                                <div class="end-blocks" id="row2end"></div>
+                            </div>
+                            <div class="row-info">→ 64 blocks process matrix rows 32-47</div>
+                        </div>
+                        
+                        <div class="vertical-dots">⋮</div>
+                        
+                        <div class="grid-row-container">
+                            <div class="row-label">Block Row 63:</div>
+                            <div class="blocks-row row-63-blocks">
+                                <div class="visible-blocks" id="row63blocks"></div>
+                                <div class="dots-indicator">...</div>
+                                <div class="end-blocks" id="row63end"></div>
+                            </div>
+                            <div class="row-info">→ 64 blocks process matrix rows 1008-1023</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hierarchy-diagram">
+                <div class="hierarchy-title">Understanding the Hierarchy</div>
+                
+                <div class="hierarchy-level level-1">
+                    <div class="hierarchy-icon"></div>
+                    <div class="hierarchy-text">
+                        <strong>Grid Level: 64 × 64 = 4,096 Blocks</strong>
+                        <span>Each BLOCK ROW processes 16 matrix rows (e.g., Block Row 0 → Matrix Rows 0-15)</span>
+                    </div>
+                </div>
+                
+                <div class="hierarchy-level level-2">
+                    <div class="hierarchy-icon"></div>
+                    <div class="hierarchy-text">
+                        <strong>Block Level: 16 × 16 = 256 Threads = 8 Warps</strong>
+                        <span>Within EACH block, 16 rows of threads process those 16 matrix rows</span>
+                    </div>
+                </div>
+                
+                <div class="hierarchy-level level-3">
+                    <div class="hierarchy-icon">⚠️</div>
+                    <div class="hierarchy-text">
+                        <strong>Problem: Each Warp Spans 2 Rows!</strong>
+                        <span>Warp 0 (32 threads) = Row 0 (threads 0-15) + Row 1 (threads 16-31)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- The Core Problem -->
+        <div class="section">
+            <div class="section-title">2. The Core Problem: Non-Coalesced Memory Access</div>
+            
+            <div class="problem-box">
+                <div class="problem-title">⚠️ Why blockDim(16, 16) Causes Problems</div>
+                <div class="problem-text">
+                    <strong>The issue is NOT between blocks - it's WITHIN each block!</strong><br>
+                    Each warp's 32 threads span 2 matrix rows, causing non-coalesced memory access.
+                </div>
+            </div>
+
+            <div class="warp-visualization">
+                <div class="warp-title">Single Block View (16×16 threads = 8 warps)</div>
+                
+                <div class="single-block-view" id="singleBlock"></div>
+                
+                <div class="warp-legend">
+                    <div class="warp-legend-item">
+                        <div class="warp-color warp-0"></div>
+                        <span>Warp 0 (Threads 0-31)</span>
+                    </div>
+                    <div class="warp-legend-item">
+                        <div class="warp-color warp-1"></div>
+                        <span>Warp 1 (Threads 32-63)</span>
+                    </div>
+                    <div class="warp-legend-item">
+                        <div class="warp-color warp-2"></div>
+                        <span>Warp 2 (Threads 64-95)</span>
+                    </div>
+                    <div class="warp-legend-item">
+                        <div class="warp-color warp-3"></div>
+                        <span>Warp 3 (Threads 96-127)</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; text-align: center; color: #f0ad4e; font-size: 18px; font-weight: 700;">
+                    Notice: Warp 0 spans Row 0 AND Row 1 of the block!
+                </div>
+            </div>
+
+            <div class="memory-diagram">
+                <div class="memory-title">Memory Access Pattern for Warp 0</div>
+                
+                <div class="memory-row-visual">
+                    <div class="memory-row-label"><strong>Matrix Row N:</strong> Threads 0-15 access consecutive locations</div>
+                    <div class="memory-cells">
+                        <div class="memory-cell">T0</div>
+                        <div class="memory-cell">T1</div>
+                        <div class="memory-cell">T2</div>
+                        <div class="memory-cell">T3</div>
+                        <div class="memory-cell">T4</div>
+                        <div class="memory-cell">T5</div>
+                        <div class="memory-cell">T6</div>
+                        <div class="memory-cell">T7</div>
+                        <div class="memory-cell">T8</div>
+                        <div class="memory-cell">T9</div>
+                        <div class="memory-cell">T10</div>
+                        <div class="memory-cell">T11</div>
+                        <div class="memory-cell">T12</div>
+                        <div class="memory-cell">T13</div>
+                        <div class="memory-cell">T14</div>
+                        <div class="memory-cell">T15</div>
+                    </div>
+                </div>
+
+                <div class="gap-indicator">
+                    ⬇ 1024-element gap (stride) ⬇
+                </div>
+
+                <div class="memory-row-visual">
+                    <div class="memory-row-label"><strong>Matrix Row N+1:</strong> Threads 16-31 access different row</div>
+                    <div class="memory-cells">
+                        <div class="memory-cell">T16</div>
+                        <div class="memory-cell">T17</div>
+                        <div class="memory-cell">T18</div>
+                        <div class="memory-cell">T19</div>
+                        <div class="memory-cell">T20</div>
+                        <div class="memory-cell">T21</div>
+                        <div class="memory-cell">T22</div>
+                        <div class="memory-cell">T23</div>
+                        <div class="memory-cell">T24</div>
+                        <div class="memory-cell">T25</div>
+                        <div class="memory-cell">T26</div>
+                        <div class="memory-cell">T27</div>
+                        <div class="memory-cell">T28</div>
+                        <div class="memory-cell">T29</div>
+                        <div class="memory-cell">T30</div>
+                        <div class="memory-cell">T31</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 25px; padding: 20px; background: #fff3cd; border-radius: 8px; border: 2px solid #f0ad4e;">
+                    <div style="font-family: 'Permanent Marker', cursive; font-size: 20px; color: #856404; margin-bottom: 10px; text-align: center;">
+                        🔑 The Problem
+                    </div>
+                    <div style="font-size: 16px; color: #3a3a3a; line-height: 1.6; text-align: center;">
+                        Warp 0's threads access memory locations <strong>1024 elements apart</strong> (assuming matrix width = 1024). 
+                        This cannot be coalesced into a single memory transaction. The GPU must issue <strong>2 separate transactions</strong>, 
+                        wasting bandwidth and reducing performance.
+                    </div>
+                </div>
+            </div>
+
+            <div class="impact-box">
+                <div class="impact-title">Performance Impact</div>
+                <ul class="impact-list">
+                    <li><strong>Multiple Memory Transactions:</strong> Each warp requires 2 transactions instead of 1</li>
+                    <li><strong>Cache Line Waste:</strong> Only ~50% of each loaded cache line is used</li>
+                    <li><strong>Memory Bandwidth Loss:</strong> Approximately 50% of memory bandwidth is wasted</li>
+                    <li><strong>Severe Bottleneck:</strong> Memory-bound kernels become extremely slow</li>
+                </ul>
+            </div>
+
+            <div class="solution-box">
+                <div class="solution-title">✓ Solution: Use blockDim(32, 32) or (32, 16)</div>
+                <div class="solution-text">
+                    <strong>Why this works:</strong> With 32 threads per row, each warp's 32 threads all belong to the SAME matrix row. 
+                    All threads access consecutive memory locations that can be coalesced into 1-2 memory transactions. 
+                    This maximizes memory bandwidth utilization and dramatically improves performance.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Generate block rows with dotted representation (show first 20, ..., last 5)
+        function generateBlockRow(containerId, endContainerId, numStart = 20, numEnd = 5) {
+            const startContainer = document.getElementById(containerId);
+            const endContainer = document.getElementById(endContainerId);
+            
+            // First blocks
+            for (let i = 0; i < numStart; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                startContainer.appendChild(cell);
+            }
+            
+            // Last blocks (representing blocks 59-63)
+            for (let i = 0; i < numEnd; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                endContainer.appendChild(cell);
+            }
+        }
+        
+        // Generate all rows
+        generateBlockRow('row0blocks', 'row0end');
+        generateBlockRow('row1blocks', 'row1end');
+        generateBlockRow('row2blocks', 'row2end');
+        generateBlockRow('row63blocks', 'row63end');
+
+        // Generate single block view (16×16)
+        const singleBlock = document.getElementById('singleBlock');
+        for (let i = 0; i < 256; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'thread-cell';
+            cell.textContent = i;
+            
+            const warpId = Math.floor(i / 32);
+            if (warpId === 0) cell.classList.add('warp-0');
+            else if (warpId === 1) cell.classList.add('warp-1');
+            else if (warpId === 2) cell.classList.add('warp-2');
+            else if (warpId === 3) cell.classList.add('warp-3');
+            
+            singleBlock.appendChild(cell);
+        }
+    </script>
+</body>
+</html>

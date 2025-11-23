@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part 1: Grid Layout Overview</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Permanent+Marker&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Kalam', cursive;
+            background: #f5f5dc;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fefef8;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 40px;
+            border: 2px solid #2a2a2a;
+        }
+
+        .header {
+            background: #e85d5d;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 28px;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .header .subtitle {
+            font-size: 18px;
+            color: #fff;
+            opacity: 0.9;
+        }
+
+        .config-section {
+            background: white;
+            border: 3px solid #2a2a2a;
+            border-left: 6px solid #f0ad4e;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .config-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 20px;
+            color: #2a2a2a;
+            margin-bottom: 12px;
+        }
+
+        .config-item {
+            font-size: 16px;
+            color: #3a3a3a;
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+
+        .grid-visual {
+            background: #3a4a5a;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+
+        .grid-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 20px;
+            color: #f0ad4e;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .grid-row-display {
+            margin: 15px 0;
+        }
+
+        .row-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }
+
+        .row-label {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 15px;
+            color: #f0ad4e;
+            min-width: 100px;
+        }
+
+        .blocks-display {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .block-group {
+            display: flex;
+            gap: 2px;
+        }
+
+        .block-cell {
+            width: 12px;
+            height: 12px;
+            border: 1px solid #2a2a2a;
+            border-radius: 2px;
+        }
+
+        .row-0 { background: #e85d5d; }
+        .row-1 { background: #5b9dd9; }
+        .row-2 { background: #6b9b6e; }
+        .row-63 { background: #888; }
+
+        .dots {
+            font-size: 20px;
+            color: #d4d4d4;
+            padding: 0 5px;
+        }
+
+        .row-info {
+            font-size: 14px;
+            color: #d4d4d4;
+            font-weight: 700;
+            min-width: 200px;
+        }
+
+        .vertical-gap {
+            text-align: center;
+            font-size: 24px;
+            color: #d4d4d4;
+            padding: 8px 0;
+        }
+
+        .key-point {
+            background: #fff3cd;
+            border: 3px solid #f0ad4e;
+            border-radius: 8px;
+            padding: 18px 22px;
+            margin: 20px 0;
+        }
+
+        .key-point-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 18px;
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .key-point-text {
+            font-size: 15px;
+            color: #3a3a3a;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1> Grid Layout Overview</h1>
+            <div class="subtitle"> Non-Coalesced Configuration</div>
+        </div>
+
+        <div class="config-section">
+            <div class="config-title">Configuration</div>
+            <div class="config-item"><strong>Grid:</strong> dim3(64, 64) = 4,096 blocks</div>
+            <div class="config-item"><strong>Block:</strong> dim3(16, 16) = 256 threads per block</div>
+            <div class="config-item"><strong>Matrix Size:</strong> 1024 × 1024 elements</div>
+            <div class="config-item"><strong>Warps per Block:</strong> 256 ÷ 32 = 8 warps</div>
+        </div>
+
+        <div class="grid-visual">
+            <div class="grid-title">64×64 Block Grid</div>
+            
+            <div class="grid-row-display">
+                <div class="row-container">
+                    <div class="row-label">Row 0:</div>
+                    <div class="blocks-display">
+                        <div class="block-group" id="row0"></div>
+                        <div class="dots">...</div>
+                        <div class="block-group" id="row0end"></div>
+                    </div>
+                    <div class="row-info">Process matrix rows 0-15</div>
+                </div>
+
+                <div class="row-container">
+                    <div class="row-label">Row 1:</div>
+                    <div class="blocks-display">
+                        <div class="block-group" id="row1"></div>
+                        <div class="dots">...</div>
+                        <div class="block-group" id="row1end"></div>
+                    </div>
+                    <div class="row-info">Process matrix rows 16-31</div>
+                </div>
+
+                <div class="row-container">
+                    <div class="row-label">Row 2:</div>
+                    <div class="blocks-display">
+                        <div class="block-group" id="row2"></div>
+                        <div class="dots">...</div>
+                        <div class="block-group" id="row2end"></div>
+                    </div>
+                    <div class="row-info">Process matrix rows 32-47</div>
+                </div>
+
+                <div class="vertical-gap">⋮</div>
+
+                <div class="row-container">
+                    <div class="row-label">Row 63:</div>
+                    <div class="blocks-display">
+                        <div class="block-group" id="row63"></div>
+                        <div class="dots">...</div>
+                        <div class="block-group" id="row63end"></div>
+                    </div>
+                    <div class="row-info">Process rows 1008-1023</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="key-point">
+            <div class="key-point-title"> Key Concept</div>
+            <div class="key-point-text">
+                <strong>Each block row</strong> contains 64 blocks that process 16 consecutive matrix rows. 
+                Within <strong>each individual block</strong>, the problem occurs because threads are organized 
+                in a 16×16 layout, causing warps to span multiple rows.
+            </div>
+        </div>
+
+        <div class="key-point" style="background: #f8d7da; border-color: #e85d5d;">
+            <div class="key-point-title" style="color: #721c24;">⚠️ The Problem</div>
+            <div class="key-point-text">
+                The issue is <strong>NOT</strong> between blocks in the grid—it's <strong>WITHIN each 16×16 block</strong>. 
+                Let's examine a single block next...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function createBlocks(containerId, endId, count = 15, endCount = 4) {
+            const container = document.getElementById(containerId);
+            const endContainer = document.getElementById(endId);
+            const className = containerId.includes('0') ? 'row-0' : 
+                             containerId.includes('1') ? 'row-1' :
+                             containerId.includes('2') ? 'row-2' : 'row-63';
+            
+            for (let i = 0; i < count; i++) {
+                const block = document.createElement('div');
+                block.className = `block-cell ${className}`;
+                container.appendChild(block);
+            }
+            
+            for (let i = 0; i < endCount; i++) {
+                const block = document.createElement('div');
+                block.className = `block-cell ${className}`;
+                endContainer.appendChild(block);
+            }
+        }
+
+        createBlocks('row0', 'row0end');
+        createBlocks('row1', 'row1end');
+        createBlocks('row2', 'row2end');
+        createBlocks('row63', 'row63end');
+    </script>
+</body>
+</html>
