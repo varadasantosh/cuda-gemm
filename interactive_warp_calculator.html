@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Warp Calculator - Notebook Style</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Permanent+Marker&family=Indie+Flower&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Kalam', cursive;
+            background: #f5f5dc;
+            background-image: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 31px,
+                    rgba(135, 206, 235, 0.3) 31px,
+                    rgba(135, 206, 235, 0.3) 32px
+                );
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .notebook-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #fefef8;
+            border-radius: 8px;
+            box-shadow: 
+                0 2px 4px rgba(0,0,0,0.1),
+                0 8px 16px rgba(0,0,0,0.1);
+            padding: 50px 60px;
+            border: 2px solid #2a2a2a;
+            position: relative;
+        }
+
+        .notebook-container::before {
+            content: '';
+            position: absolute;
+            left: 40px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent 60px,
+                #ddd 60px,
+                #ddd 70px
+            );
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 4px solid #6b9b6e;
+        }
+
+        .header h1 {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 38px;
+            color: #2d5a2f;
+            margin-bottom: 10px;
+            transform: rotate(-0.5deg);
+            text-shadow: 2px 2px 0px rgba(107, 155, 110, 0.2);
+        }
+
+        .header .subtitle {
+            font-family: 'Indie Flower', cursive;
+            font-size: 18px;
+            color: #555;
+        }
+
+        /* Interactive Instruction Box */
+        .interactive-instruction {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe8a1 100%);
+            border: 3px solid #f0ad4e;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            text-align: center;
+            animation: pulse-glow 2s ease-in-out infinite;
+            box-shadow: 0 4px 12px rgba(240, 173, 78, 0.2);
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 4px 12px rgba(240, 173, 78, 0.2);
+            }
+            50% {
+                box-shadow: 0 6px 20px rgba(240, 173, 78, 0.4);
+            }
+        }
+
+        .instruction-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .instruction-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 26px;
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .instruction-text {
+            font-size: 18px;
+            color: #3a3a3a;
+            line-height: 1.6;
+        }
+
+        /* Calculation Display Section - Now at top */
+        .calculation-display {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border: 3px solid #6b9b6e;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            min-height: 200px;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+        }
+
+        .calc-header {
+            background: #6b9b6e;
+            border: 2px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .selected-thread {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 24px;
+            color: white;
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 8px 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .calc-steps {
+            background: white;
+            border: 2px solid #6b9b6e;
+            border-radius: 8px;
+            padding: 20px;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        .formula-line {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f0fff4;
+            border-left: 4px solid #6b9b6e;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .result-line {
+            margin: 15px 0;
+            padding: 15px;
+            background: #fff3cd;
+            border: 2px solid #f0ad4e;
+            border-radius: 8px;
+            font-weight: 700;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .placeholder-message {
+            text-align: center;
+            font-style: italic;
+            color: #888;
+            font-size: 18px;
+            padding: 40px;
+        }
+
+        /* Info Section */
+        .info-section {
+            background: white;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+        }
+
+        .info-item {
+            background: #e8f5e9;
+            border-left: 5px solid #6b9b6e;
+            padding: 12px 20px;
+            margin: 10px 0;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .info-label {
+            font-family: 'Permanent Marker', cursive;
+            color: #2d5a2f;
+            font-size: 16px;
+        }
+
+        .info-text {
+            color: #3a3a3a;
+            font-size: 15px;
+            margin-top: 5px;
+        }
+
+        /* Warp Sections */
+        .warp-section {
+            margin: 30px 0;
+        }
+
+        .warp-header {
+            font-family: 'Permanent Marker', cursive;
+            background: #6b9b6e;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 20px;
+            margin-bottom: 12px;
+            display: inline-block;
+            border: 2px solid #2a2a2a;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+        }
+
+        .thread-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .thread-cell {
+            background: #a8d5a8;
+            color: #2a2a2a;
+            padding: 12px 8px;
+            text-align: center;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 700;
+            border: 2px solid #2a2a2a;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .thread-cell::before {
+            content: '👆';
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 18px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .thread-cell:hover::before {
+            opacity: 1;
+            animation: bounce 0.5s ease infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { top: -25px; }
+            50% { top: -30px; }
+        }
+
+        .thread-cell:hover {
+            background: #8bc98b;
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.15);
+        }
+
+        .thread-cell:active {
+            transform: translateY(-1px) scale(1.02);
+            box-shadow: 1px 1px 0px rgba(0,0,0,0.1);
+        }
+
+        .ellipsis-cell {
+            background: #e0e0e0;
+            color: #888;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 24px;
+            border-radius: 6px;
+            border: 2px solid #ccc;
+        }
+
+        .vertical-ellipsis {
+            text-align: center;
+            margin: 30px 0;
+            font-size: 32px;
+            color: #888;
+            font-weight: bold;
+        }
+
+        .warp-note {
+            text-align: center;
+            font-style: italic;
+            color: #888;
+            margin: 20px 0;
+            font-size: 18px;
+        }
+
+        /* Highlight selected thread */
+        .thread-cell.selected {
+            background: #f0ad4e;
+            border-color: #856404;
+            animation: highlight-pulse 1s ease;
+        }
+
+        @keyframes highlight-pulse {
+            0%, 100% { 
+                background: #f0ad4e;
+                box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+            }
+            50% { 
+                background: #ffb84d;
+                box-shadow: 0 0 20px rgba(240, 173, 78, 0.6);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="notebook-container">
+        <div class="header">
+            <h1> Interactive Warp Calculator</h1>
+            <div class="subtitle">Block(0,0) - Thread to Warp Mapping</div>
+        </div>
+
+        <!-- Interactive Instruction Box -->
+        <div class="interactive-instruction">
+            <div class="instruction-text">
+                Click on any green thread cell (like C(0,0)) to see which warp it belongs to<br>
+                and view the complete calculation!
+            </div>
+        </div>
+
+        <!-- Calculation Display (moved to top) -->
+        <div class="calculation-display">
+            <div class="calc-header">
+                <span class="selected-thread" id="selectedThread">Select a thread to begin...</span>
+            </div>
+            <div class="calc-steps" id="calcSteps">
+                <div class="placeholder-message">
+                    👇 Click any thread cell below to see the calculation!
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="info-section">
+            <div class="info-item">
+                <div class="info-label">Thread Block:</div>
+                <div class="info-text">Each Block has 1,024 Threads (32×32 configuration)</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Warp Division:</div>
+                <div class="info-text">1,024 Threads organized into 32 Warps (32 threads per warp)</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Output Elements:</div>
+                <div class="info-text">Each thread calculates one output matrix element</div>
+            </div>
+        </div>
+
+        <!-- Warp 0 -->
+        <div class="warp-section">
+            <div class="warp-header">Warp 0 (Threads 0-31)</div>
+            <div class="thread-grid">
+                <div class="thread-cell" onclick="showWarpCalculation(0, 0)" data-y="0" data-x="0">C(0,0)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(0, 1)" data-y="0" data-x="1">C(0,1)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(0, 2)" data-y="0" data-x="2">C(0,2)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(0, 3)" data-y="0" data-x="3">C(0,3)</div>
+                <div class="ellipsis-cell">...</div>
+                <div class="thread-cell" onclick="showWarpCalculation(0, 28)" data-y="0" data-x="28">C(0,28)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(0, 29)" data-y="0" data-x="29">C(0,29)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(0, 31)" data-y="0" data-x="31">C(0,31)</div>
+            </div>
+        </div>
+
+        <!-- Warp 1 -->
+        <div class="warp-section">
+            <div class="warp-header">Warp 1 (Threads 32-63)</div>
+            <div class="thread-grid">
+                <div class="thread-cell" onclick="showWarpCalculation(1, 0)" data-y="1" data-x="0">C(1,0)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(1, 1)" data-y="1" data-x="1">C(1,1)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(1, 2)" data-y="1" data-x="2">C(1,2)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(1, 3)" data-y="1" data-x="3">C(1,3)</div>
+                <div class="ellipsis-cell">...</div>
+                <div class="thread-cell" onclick="showWarpCalculation(1, 28)" data-y="1" data-x="28">C(1,28)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(1, 29)" data-y="1" data-x="29">C(1,29)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(1, 31)" data-y="1" data-x="31">C(1,31)</div>
+            </div>
+        </div>
+
+        <!-- Warp 2 -->
+        <div class="warp-section">
+            <div class="warp-header">Warp 2 (Threads 64-95)</div>
+            <div class="thread-grid">
+                <div class="thread-cell" onclick="showWarpCalculation(2, 0)" data-y="2" data-x="0">C(2,0)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(2, 1)" data-y="2" data-x="1">C(2,1)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(2, 2)" data-y="2" data-x="2">C(2,2)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(2, 3)" data-y="2" data-x="3">C(2,3)</div>
+                <div class="ellipsis-cell">...</div>
+                <div class="thread-cell" onclick="showWarpCalculation(2, 28)" data-y="2" data-x="28">C(2,28)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(2, 29)" data-y="2" data-x="29">C(2,29)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(2, 31)" data-y="2" data-x="31">C(2,31)</div>
+            </div>
+        </div>
+
+        <!-- Vertical ellipsis -->
+        <div class="vertical-ellipsis">⋮</div>
+        <div class="warp-note">(28 more warps ...)</div>
+
+        <!-- Warp 31 -->
+        <div class="warp-section">
+            <div class="warp-header">Warp 31 (Threads 992-1023)</div>
+            <div class="thread-grid">
+                <div class="thread-cell" onclick="showWarpCalculation(31, 0)" data-y="31" data-x="0">C(31,0)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(31, 1)" data-y="31" data-x="1">C(31,1)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(31, 2)" data-y="31" data-x="2">C(31,2)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(31, 3)" data-y="31" data-x="3">C(31,3)</div>
+                <div class="ellipsis-cell">...</div>
+                <div class="thread-cell" onclick="showWarpCalculation(31, 28)" data-y="31" data-x="28">C(31,28)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(31, 29)" data-y="31" data-x="29">C(31,29)</div>
+                <div class="thread-cell" onclick="showWarpCalculation(31, 31)" data-y="31" data-x="31">C(31,31)</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showWarpCalculation(threadY, threadX) {
+            const blockDimX = 32;
+            const threadId = threadY * blockDimX + threadX;
+            const warpId = Math.floor(threadId / 32);
+            const warpStart = warpId * 32;
+            const warpEnd = warpStart + 31;
+
+            // Remove previous selection
+            document.querySelectorAll('.thread-cell').forEach(cell => {
+                cell.classList.remove('selected');
+            });
+
+            // Highlight selected cell
+            const selectedCell = document.querySelector(`.thread-cell[data-y="${threadY}"][data-x="${threadX}"]`);
+            if (selectedCell) {
+                selectedCell.classList.add('selected');
+            }
+
+            // Update header
+            document.getElementById('selectedThread').textContent = `Thread C(${threadY},${threadX})`;
+
+            // Update calculation steps
+            document.getElementById('calcSteps').innerHTML = `
+                <div class="formula-line">
+                    <strong>Formula:</strong> threadId = threadIdx.y × blockDim.x + threadIdx.x
+                </div>
+
+                <div class="formula-line">
+                    <strong>Given:</strong> threadIdx.y = ${threadY}, threadIdx.x = ${threadX}, blockDim.x = ${blockDimX}
+                </div>
+
+                <div class="formula-line">
+                    <strong>Calculate threadId:</strong><br>
+                    threadId = ${threadY} × ${blockDimX} + ${threadX}<br>
+                    threadId = ${threadY * blockDimX} + ${threadX}<br>
+                    threadId = <strong>${threadId}</strong>
+                </div>
+
+                <div class="formula-line">
+                    <strong>Calculate warpId:</strong><br>
+                    warpId = threadId ÷ 32<br>
+                    warpId = ${threadId} ÷ 32<br>
+                    warpId = <strong>${warpId}</strong>
+                </div>
+
+                <div class="result-line">
+                    ✓ Thread C(${threadY},${threadX}) belongs to <strong>Warp ${warpId}</strong><br>
+                    (Warp ${warpId} contains threads ${warpStart}-${warpEnd})
+                </div>
+            `;
+
+            // Scroll to calculation display smoothly
+            document.querySelector('.calculation-display').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'nearest' 
+            });
+        }
+    </script>
+</body>
+</html>
