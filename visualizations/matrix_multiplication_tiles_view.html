@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Multiplication Tiles - Notebook Style</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Permanent+Marker&family=Indie+Flower&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Kalam', cursive;
+            background: #f5f5dc;
+            background-image: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 31px,
+                    rgba(135, 206, 235, 0.3) 31px,
+                    rgba(135, 206, 235, 0.3) 32px
+                );
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .notebook-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #fefef8;
+            border-radius: 8px;
+            box-shadow: 
+                0 2px 4px rgba(0,0,0,0.1),
+                0 8px 16px rgba(0,0,0,0.1);
+            padding: 50px 60px;
+            border: 2px solid #2a2a2a;
+            position: relative;
+        }
+
+        .notebook-container::before {
+            content: '';
+            position: absolute;
+            left: 40px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0px,
+                transparent 60px,
+                #ddd 60px,
+                #ddd 70px
+            );
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 4px solid #5b9dd9;
+        }
+
+        .header h1 {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 42px;
+            color: #2d4a5a;
+            margin-bottom: 10px;
+            transform: rotate(-0.8deg);
+            text-shadow: 2px 2px 0px rgba(91, 157, 217, 0.2);
+        }
+
+        .matrices-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin-bottom: 50px;
+            flex-wrap: wrap;
+        }
+
+        .matrix-container {
+            background: white;
+            border: 3px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.15);
+            transform: rotate(-0.5deg);
+            transition: all 0.3s ease;
+        }
+
+        .matrix-container:hover {
+            transform: rotate(0deg) translateY(-5px);
+            box-shadow: 5px 5px 0px rgba(0,0,0,0.2);
+        }
+
+        .matrix-a {
+            border-color: #5b9dd9;
+        }
+
+        .matrix-b {
+            border-color: #3be346;
+        }
+
+        .matrix-c {
+            border-color: #b19cd9;
+        }
+
+        .matrix-title {
+            font-family: 'Permanent Marker', cursive;
+            font-size: 22px;
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .title-a {
+            background: #d4e9f7;
+            color: #2d4a5a;
+        }
+
+        .title-b {
+            background: #e8f5e9;
+            color: #2d5a2f;
+        }
+
+        .title-c {
+            background: #e8e0f5;
+            color: #4d4453;
+        }
+
+        .matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+        }
+
+        .tile-cell {
+            padding: 10px 8px;
+            text-align: center;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            min-width: 42px;
+            transition: all 0.2s ease;
+        }
+
+        .tile-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .tile-a {
+            background: #b8d8f0;
+            color: #368ad8;
+        }
+
+      
+
+        .tile-b {
+            background: #c8e6c9;
+            color: #1a4a2a;
+        }
+
+       
+        .tile-c {
+            background: #d8c8e6;
+            color: #3a1a5a;
+        }
+
+
+        .operator {
+            font-size: 60px;
+            font-weight: bold;
+            color: #2a2a2a;
+            transform: rotate(-10deg);
+        }
+
+        .result-section {
+            margin-top: 50px;
+        }
+
+        .result-arrow {
+            text-align: center;
+            font-size: 48px;
+            color: #5b9dd9;
+            margin: 30px 0;
+        }
+
+        @media (max-width: 1200px) {
+            .matrices-row {
+                flex-direction: column;
+            }
+
+            .operator {
+                transform: rotate(90deg);
+                margin: 20px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="notebook-container">
+        <div class="header">
+            <h1>Matrix Multiplication (Tiled View)</h1>
+        </div>
+
+        <!-- Top Row: Matrix A × Matrix B -->
+        <div class="matrices-row">
+            <!-- Matrix A -->
+            <div class="matrix-container matrix-a">
+                <div class="matrix-title title-a">Matrix A (8×8 tiles)</div>
+                <div class="matrix-grid" id="matrixA"></div>
+            </div>
+
+            <!-- Multiplication operator -->
+            <div class="operator">×</div>
+
+            <!-- Matrix B -->
+            <div class="matrix-container matrix-b">
+                <div class="matrix-title title-b">Matrix B (8×8 tiles)</div>
+                <div class="matrix-grid" id="matrixB"></div>
+            </div>
+        </div>
+
+        <!-- Arrow -->
+        <div class="result-arrow">↓</div>
+
+        <!-- Result Section: Matrix C -->
+        <div class="result-section">
+            <div class="matrix-container matrix-c" style="margin: 0 auto; width: fit-content;">
+                <div class="matrix-title title-c">Matrix C (Result)</div>
+                <div class="matrix-grid" id="matrixC"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Generate Matrix A tiles
+        const matrixA = document.getElementById('matrixA');
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const tile = document.createElement('div');
+                tile.className = 'tile-cell tile-a';
+                tile.textContent = `${row},${col}`;
+                matrixA.appendChild(tile);
+            }
+        }
+
+        // Generate Matrix B tiles
+        const matrixB = document.getElementById('matrixB');
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const tile = document.createElement('div');
+                tile.className = 'tile-cell tile-b';
+                tile.textContent = `${row},${col}`;
+                matrixB.appendChild(tile);
+            }
+        }
+
+        // Generate Matrix C tiles
+        const matrixC = document.getElementById('matrixC');
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const tile = document.createElement('div');
+                tile.className = 'tile-cell tile-c';
+                tile.textContent = `${row},${col}`;
+                matrixC.appendChild(tile);
+            }
+        }
+    </script>
+</body>
+</html>
